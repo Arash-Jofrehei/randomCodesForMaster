@@ -1,5 +1,4 @@
 #define test1_cxx
-#define test1_cxx
 #include "test1.h"
 #include <TH2.h>
 #include <TStyle.h>
@@ -14,82 +13,21 @@
 #include "TCanvas.h"
 
 using namespace std;
-void test1(){
-  cout<<"Compiled"<<endl;
-  }
-  
-  void format_h(TH1F* h, int linecolor){
-     h->SetLineWidth(3);
-     h->SetLineColor(linecolor);
- }
-  
-class Painter{
-    public:
-    //cout<<"drawing:"<<endl;
-    TFile *center = new TFile("ntuples/analysis_4684.root");
-    TTree * h4 = (TTree*) center->Get( "h4" );
-    TCanvas *c1 = new TCanvas("c1","c1");
-    //TH1F *original_sum = new TH1F("original_sum", "original_sum", 100,8000,300000);
-    void original(){
-    h4->Draw("charge_sig[xtal4apd_1]+charge_sig[xtal4apd_2]+charge_sig[xtal4apd_3]+charge_sig[xtal4apd_4]>>original_sum(100,8000,300000)","nFibresOnX[0]==2 && nFibresOnY[0]==2 && X[0] > -3 && X[0] < 3 && Y[0] > -3 && Y[0] < 3");
-    original_sum.Fit("gaus","","",8000,300000);
-    c1->Modified();
-    c1->Update();
-    };
-    
-    /*
-    
-    void apd1(){
-    h4->Draw("4*charge_sig[xtal4apd_1]>>apd1(100,8000,300000)","nFibresOnX[0]==2 && nFibresOnY[0]==2 && X[0] > -3 && X[0] < 3 && Y[0] > -3 && Y[0] < 3");
-    apd1.Fit("gaus","","",8000,300000);
-    apd1->SetLineWidth(1);
-    c1->Modified();
-    c1->Update();
-    };
-    
-    void apd2(){
-    h4->Draw("4*charge_sig[xtal4apd_2]>>apd2(100,8000,300000)","nFibresOnX[0]==2 && nFibresOnY[0]==2 && X[0] > -3 && X[0] < 3 && Y[0] > -3 && Y[0] < 3");
-    apd2.Fit("gaus","","",8000,300000);
-    c1->Modified();
-    c1->Update();
-    };
-    
-    void apd3(){
-    h4->Draw("4*charge_sig[xtal4apd_3]>>apd3(100,8000,300000)","nFibresOnX[0]==2 && nFibresOnY[0]==2 && X[0] > -3 && X[0] < 3 && Y[0] > -3 && Y[0] < 3");
-    apd3.Fit("gaus","","",8000,300000);
-    apd3->SetFillStyle(0);
-    c1->Modified();
-    c1->Update();
-    };
-    
-    void apd4(){
-    h4->Draw("4*charge_sig[xtal4apd_4]>>apd4(100,8000,300000)","nFibresOnX[0]==2 && nFibresOnY[0]==2 && X[0] > -3 && X[0] < 3 && Y[0] > -3 && Y[0] < 3");
-    apd4.Fit("gaus","","",8000,300000);
-    apd4->SetLineColor(6);
-    apd4->SetFillStyle(3004);
-    apd4->SetFillColorAlpha(kPink,0.5);
-    c1->Modified();
-    c1->Update();
-    };*/
-    
-}painter;
-   
 
-/*
+void format_h(TH1F* h, int linecolor){
+  h->SetLineWidth(3);
+  h->SetLineColor(linecolor);
+}
 
-#define test1_cxx
-#include "test1.h"
-#include <TH2.h>
-#include <TStyle.h>
-#include <TCanvas.h>
-#include <iostream>
-using namespace std;
+TFile *center = new TFile("ntuples/analysis_4684.root");
+TTree * h4 = (TTree*) center->Get( "h4" );
+TCanvas *c1 = new TCanvas("c1","c1");
+TH1F *original_sum = new TH1F("original_sum", "original_sum", 500,8000,300000);
+TH1F *apd1 = new TH1F("apd1", "apd1", 500,8000,300000);
+TH1F *apd2 = new TH1F("apd2", "apd2", 500,8000,300000);
+TH1F *apd3 = new TH1F("apd3", "apd3", 500,8000,300000);
+TH1F *apd4 = new TH1F("apd4", "apd4", 500,8000,300000);
 
-//TCanvas *c1 = new TCanvas("c1","Charge_sig");
-//  c1->SetGrid();
-  
-//  TH1F *charge_sig = new TH1F("charge_sig","charge_sig",1024,-5,5);
-  */
 void test1::Loop()
 {
 //   In a ROOT session, you can do:
@@ -126,11 +64,54 @@ void test1::Loop()
       Long64_t ientry = LoadTree(jentry);
       if (ientry < 0) break;
       nb = fChain->GetEntry(jentry);   nbytes += nb;
+      if (nFibresOnX[0]==2 && nFibresOnY[0]==2 && X[0] > -3 && X[0] < 3 && Y[0] > -3 && Y[0] < 3){
+        original_sum->Fill(charge_sig[xtal4apd_1]+charge_sig[xtal4apd_1]+charge_sig[xtal4apd_3]+charge_sig[xtal4apd_4]);
+        apd1->Fill(charge_sig[xtal4apd_1]);
+        apd2->Fill(charge_sig[xtal4apd_2]);
+        apd3->Fill(charge_sig[xtal4apd_3]);
+        apd4->Fill(charge_sig[xtal4apd_4]);
+      }
       // if (Cut(ientry) < 0) continue;
    }
+   original_sum->Fit("gaus","","",8000,300000);
+   TF1 *fit_original_sum = original_sum->GetFunction("gaus");
+   Double_t constant_original_sum = fit_original_sum->GetParameter(0);
+   Double_t mean_original_sum = fit_original_sum->GetParameter(1);
+   Double_t sigma_original_sum = fit_original_sum->GetParameter(2);
    
+   apd1->Fit("gaus","","",8000,300000);
+   TF1 *fit_apd1 = apd1->GetFunction("gaus");
+   Double_t constant_apd1 = fit_apd1->GetParameter(0);
+   Double_t mean_apd1 = fit_apd1->GetParameter(1);
+   Double_t sigma_apd1 = fit_apd1->GetParameter(2);
+   apd1->SetLineWidth(1);
+   apd1->SetLineColor(2);
    
-   //charge_sig->Fill(h4->charge_sig[xtal_4apd_1]->GetEntry(jentry));
-  
-  
+   apd2->Fit("gaus","","",8000,300000);
+   TF1 *fit_apd2 = apd2->GetFunction("gaus");
+   Double_t constant_apd2 = fit_apd2->GetParameter(0);
+   Double_t mean_apd2 = fit_apd2->GetParameter(1);
+   Double_t sigma_apd2 = fit_apd2->GetParameter(2);
+   apd2->SetLineWidth(1);
+   apd2->SetLineColor(3);
+   
+   apd3->Fit("gaus","","",8000,300000);
+   TF1 *fit_apd3 = apd3->GetFunction("gaus");
+   Double_t constant_apd3 = fit_apd3->GetParameter(0);
+   Double_t mean_apd3 = fit_apd3->GetParameter(1);
+   Double_t sigma_apd3 = fit_apd3->GetParameter(2);
+   apd3->SetLineWidth(1);
+   apd3->SetLineColor(4);
+   apd3->SetFillStyle(0); //hollow
+   
+   apd4->Fit("gaus","","",8000,300000);
+   TF1 *fit_apd4 = apd4->GetFunction("gaus");
+   Double_t constant_apd4 = fit_apd4->GetParameter(0);
+   Double_t mean_apd4 = fit_apd4->GetParameter(1);
+   Double_t sigma_apd4 = fit_apd4->GetParameter(2);
+   apd4->SetLineWidth(1);
+   apd4->SetLineColor(6);
+   apd4->SetFillStyle(3004);
+   apd4->SetFillColorAlpha(kPink,0.5);
+    
 }
