@@ -15,8 +15,6 @@
 
 using namespace std;
 void test1(){
-
-
   cout<<"Compiled"<<endl;
   }
   
