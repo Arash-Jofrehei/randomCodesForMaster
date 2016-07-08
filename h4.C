@@ -22,24 +22,24 @@ void format_h(TH1F* h, int linecolor){
 TFile *center = new TFile("ntuples/analysis_4684.root");
 TTree * main = (TTree*) center->Get( "h4" );
 TCanvas *c1 = new TCanvas("c1","c1");
-TH1F *original_sum = new TH1F("original_sum", "original_sum", 1012,10011,150000);
-TH1F *weighted_sum = new TH1F("weighted_sum", "weighted_sum", 1012,10011,150000);
-TH1F *apd1 = new TH1F("apd1", "apd1", 1012,10011,150000);
-TH1F *apd2 = new TH1F("apd2", "apd2", 1012,10011,150000);
-TH1F *apd3 = new TH1F("apd3", "apd3", 1012,10011,150000);
-TH1F *apd4 = new TH1F("apd4", "apd4", 1012,10011,150000);
-TH1F *weighted_apd1 = new TH1F("weighted_apd1", "weighted_apd1", 1012,10011,150000);
-TH1F *weighted_apd2 = new TH1F("weighted_apd2", "weighted_apd2", 1012,10011,150000);
-TH1F *weighted_apd3 = new TH1F("weighted_apd3", "weighted_apd3", 1012,10011,150000);
-TH1F *weighted_apd4 = new TH1F("weighted_apd4", "weighted_apd4", 1012,10011,150000);
+TH1F *original_sum = new TH1F("original_sum", "original_sum", 201,10011,150000);
+TH1F *weighted_sum = new TH1F("weighted_sum", "weighted_sum", 201,10011,150000);
+TH1F *apd1 = new TH1F("apd1", "apd1", 201,10011,150000);
+TH1F *apd2 = new TH1F("apd2", "apd2", 201,10011,150000);
+TH1F *apd3 = new TH1F("apd3", "apd3", 201,10011,150000);
+TH1F *apd4 = new TH1F("apd4", "apd4", 201,10011,150000);
+TH1F *weighted_apd1 = new TH1F("weighted_apd1", "weighted_apd1", 201,10011,150000);
+TH1F *weighted_apd2 = new TH1F("weighted_apd2", "weighted_apd2", 201,10011,150000);
+TH1F *weighted_apd3 = new TH1F("weighted_apd3", "weighted_apd3", 201,10011,150000);
+TH1F *weighted_apd4 = new TH1F("weighted_apd4", "weighted_apd4", 201,10011,150000);
 TH1F *X0 = new TH1F("X0", "X0", 39,-19,19);
 TH1F *Y0 = new TH1F("Y0", "Y0", 39,-19,19);
 TH1F *X1 = new TH1F("X1", "X1", 39,-19,19);
 TH1F *Y1 = new TH1F("Y1", "Y1", 39,-19,19);
-TH2F *weighted_sum_X0 = new TH2F("weighted_sum_X0","weighted_sum_X0",130,-6,6,1012,10011,150000);
-TH2F *weighted_sum_Y0 = new TH2F("weighted_sum_Y0","weighted_sum_Y0",130,-6,6,1012,10011,150000);
-TH2F *weighted_sum_X1 = new TH2F("weighted_sum_X1","weighted_sum_X1",130,-6,6,1012,10011,150000);
-TH2F *weighted_sum_Y1 = new TH2F("weighted_sum_Y1","weighted_sum_Y1",130,-6,6,1012,10011,150000);
+TH2F *weighted_sum_X0 = new TH2F("weighted_sum_X0","weighted_sum_X0",130,-6,6,201,10011,150000);
+TH2F *weighted_sum_Y0 = new TH2F("weighted_sum_Y0","weighted_sum_Y0",130,-6,6,201,10011,150000);
+TH2F *weighted_sum_X1 = new TH2F("weighted_sum_X1","weighted_sum_X1",130,-6,6,201,10011,150000);
+TH2F *weighted_sum_Y1 = new TH2F("weighted_sum_Y1","weighted_sum_Y1",130,-6,6,201,10011,150000);
 TF1 *crys = new TF1("crys","crystalball",10011,150000);
 TF1 *g = new TF1("g","gaus",10011,150000);
 Double_t mean_apd[4] = {0};
@@ -266,12 +266,13 @@ void h4::Loop()
    cout << "sigma^2 of weighted_sum:  " << sigma_weighted_sum*sigma_weighted_sum << endl;
    //cout << weights[0] << "   " << weights[1] << "   "<< weights[2] << "   " << weights[3] << endl;
    /*
-   weighted_apd1->Draw();
+   weighted_sum->Draw();
+   weighted_apd1->Draw("SAME");
    weighted_apd2->Draw("SAME");
    weighted_apd3->Draw("SAME");
    weighted_apd4->Draw("SAME");
-   weighted_sum->Draw("SAME");
-   
+   */
+   /*
    weighted_sum_X0->Draw();
    weighted_sum_Y0->Draw();
    weighted_sum_X1->Draw();
@@ -294,11 +295,19 @@ void h4::Loop()
    weighted_sum_Y1_prof->Draw();
    weighted_sum_Y1_prof->Fit("gaus","","",-5,5);
    */
-   /*
-   Double_t ENERGY[] = {20,50,100,200};
+   
+   Double_t Energy[] = {20,50,100,200};
    Double_t RES[] = {5.08869,2.84973,1.98741,1.74835};
-   TGraph *RES_ENERGY = new TGraph(4,ENERGY,RES);
+   TGraph *RES_Energy = new TGraph(4,Energy,RES);
    TF1 *res_fit = new TF1("res_fit","[0]/sqrt(x) + [1]",10,210);
-   RES_ENERGY->Fit(res_fit);
-   RES_ENERGY->Draw();*/
+   RES_Energy->Fit(res_fit);
+   RES_Energy->Draw();
+   /*
+   Double_t Energy[] = {20,50,100,200};
+   Double_t sigma_x[] = {0.55,0.445,0.38,0.2};
+   TGraph *sigma_x_Energy = new TGraph(4,Energy,sigma_x);
+   sigma_x_Energy->Draw();
+   Double_t sigma_y[] = {0.94,0.32,0.4,0.18};
+   TGraph *sigma_y_Energy = new TGraph(4,Energy,sigma_y);
+   sigma_y_Energy->Draw();*/
 }
