@@ -23,16 +23,19 @@ double          Xbar;
 double          Ybar;
 double          uniformed_calibrated_sum;
 int x_index,y_index;
-
-double c[80][80];
-double n[80][80];
+const int nbins = 80;
+double c[nbins][nbins];
+double n[nbins][nbins];
 double calibrated_sum = 0;
 double weights[18] = {1197.5/574,2523.75/1512,1197.5/779,0,0,2523.75/5300,0.94649,0.935808,1.17086,0.980063,2523.75/1850,0,0,1197.5/2561,2523.75/1433,1197.5/876,0,0};
 
 void uniform()
 {
   TCanvas *canvas = new TCanvas("c","c");
-  TFile *merged_file = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/merged_crystal4apd.root","UPDATE");
+  TH1F *uni_calib = new TH1F("uni_calib","uni_calib",40,80,120);
+  TH3F *Ybar_Xbar_uni = new TH3F("Ybar_Xbar_uni","Ybar_Xbar_uni",nbins,197,217,nbins,283.5,303.5,130000,-10000,120000);
+  TH3F *Y1_X1_uni = new TH3F("Y1_X1_uni","Ybar_Xbar_uni",nbins,197,217,nbins,283.5,303.5,130000,-100000,1200000);
+  TFile *merged_file = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/merged_crystal4apd.root"/*,"UPDATE"*/);
   TTree *mtree = (TTree*) merged_file->Get("h4");
   TTree *uniformed = new TTree("uniformed","uniformed");
   uniformed->Branch("uniformed_calibrated_sum",&uniformed_calibrated_sum,"uniformed_calibrated_sum/D");
@@ -49,38 +52,36 @@ void uniform()
   mtree->SetBranchAddress("ybar",&ybar);
   Long64_t nentries = mtree->GetEntriesFast();
   Long64_t nbytes = 0, nb = 0;
-  for (int i = 0;i < 80;i++)
-    for (int j = 0;j < 80;j++){
-      c[i][j] = -1;
+  for (int i = 0;i < nbins;i++)
+    for (int j = 0;j < nbins;j++){
+      c[i][j] = 0;
       n[i][j] = 0;
     }
-  for (Long64_t jentry=0; jentry<nentries;jentry++) {
+  for (Long64_t jentry=0; jentry<nentries/10;jentry++) {
     Long64_t ientry = mtree->LoadTree(jentry);
     nb = mtree->GetEntry(jentry);   nbytes += nb;
     calibrated_sum = 0;
     for (int i = 0;i < 18;i++)
       calibrated_sum += charge_sig[i] * weights[i];
-    x_index = int(4*(xbar - 197));
-    y_index = int(4*(ybar - 283.5));
-    if (x_index<0||y_index<0||x_index>79||y_index>79)
+    x_index = int((nbins/20.0)*(xbar - 197));
+    y_index = int((nbins/20.0)*(ybar - 283.5));
+    if (x_index<0||y_index<0||x_index>(nbins-1)||y_index>(nbins-1))
       continue;
     n[x_index][y_index] += 1;
     c[x_index][y_index] += calibrated_sum/100000.0;
-    //if (jentry%1000 == 0)
-      //cout << c[x_index][y_index] << endl;
   }
-  for (int i = 0;i < 80;i++){
-    for (int j = 0;j < 80;j++){
+  for (int i = 0;i < nbins;i++){
+    for (int j = 0;j < nbins;j++){
       if (n[i][j] != 0)
       {
         c[i][j] /= n[i][j];
         if (c[i][j] != 0)
-          c[i][j] = 100.0/c[i][j];
+          c[i][j] = 0.001/c[i][j];
       }
     }
   }
   nbytes = 0, nb = 0;
-  for (Long64_t jentry=0; jentry<nentries;jentry++) {
+  for (Long64_t jentry=0; jentry<nentries/10;jentry++){
     Long64_t ientry = mtree->LoadTree(jentry);
     nb = mtree->GetEntry(jentry);   nbytes += nb;
     originalX[0] = x[0];
@@ -90,23 +91,34 @@ void uniform()
     Xbar = xbar;
     Ybar = ybar;
     calibrated_sum = 0;
-    x_index = int(4*(xbar - 197));
-    y_index = int(4*(ybar - 283.5));
-    if (x_index<0||y_index<0||x_index>79||y_index>79){
+    x_index = int((nbins/20.0)*(xbar - 197));
+    y_index = int((nbins/20.0)*(ybar - 283.5));
+    if (x_index<0||y_index<0||x_index>(nbins-1)||y_index>(nbins-1)){
       uniformed_calibrated_sum = 0;
-      uniformed->Fill();
+      //uniformed->Fill();
       continue;
     }
     for (int i = 0;i < 18;i++)
       calibrated_sum += charge_sig[i] * weights[i];
     uniformed_calibrated_sum = calibrated_sum * c[x_index][y_index];
-    if (jentry%10000 == 0){
-      cout << "uniformed_calibrated_sum:" << uniformed_calibrated_sum << endl;
-      cout << "calibrated_sum:" << calibrated_sum << endl;
-      for (int i = 0;i<18;i++)
-        cout << i+1 << ":    " << charge_sig[i] << endl;
+    uni_calib->Fill(uniformed_calibrated_sum);
+    Ybar_Xbar_uni->Fill(Xbar,Ybar,uniformed_calibrated_sum);
+    if (x[1] > -500 && y[1] > -500){
+      Y1_X1_uni->Fill(x[1],y[1],uniformed_calibrated_sum);
     }
-    uniformed->Fill();
+    //uniformed->Fill();
   }
-  uniformed->Write();
+  TProfile2D *Ybar_Xbar_uni_prof = Ybar_Xbar_uni->Project3DProfile("yx");
+  TProfile2D *Y1_X1_uni_prof = Y1_X1_uni->Project3DProfile("yx");
+  Ybar_Xbar_uni_prof->Draw("colz");
+  /*for (int i = 0;i < nbins;i++){
+    for (int j = 0;j < nbins;j++){
+      //if (Ybar_Xbar_uni_prof->GetBinContent(i,j) != 0)
+        cout << Ybar_Xbar_uni_prof->GetBinContent(i+1,j+1) << " ";
+    }
+    cout << endl;
+  }*/
+  Y1_X1_uni_prof->Draw("colz");
+  //uni_calib->Draw();
+  //uniformed->Write();
 }
