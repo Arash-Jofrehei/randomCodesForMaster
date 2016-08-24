@@ -160,7 +160,7 @@ ftree->SetBranchAddress("nFibresOnY", nFibresOnY, &b_nFibresOnY);
 
   nentries = ftree->GetEntriesFast();
   nbytes = 0, nb = 0;
-  for (Long64_t jentry=0; jentry<nentries/10;jentry++) {
+  for (Long64_t jentry=0; jentry<nentries;jentry++) {
     Long64_t ientry = ftree->LoadTree(jentry);
     nb = ftree->GetEntry(jentry);   nbytes += nb;
     if (TMath::Abs(x[0]-212.0)<1&&TMath::Abs(y[0]-299.5)<1)
