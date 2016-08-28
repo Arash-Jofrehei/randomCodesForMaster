@@ -77,16 +77,15 @@ TH1F* convoluted_pulse_WLS;
 Double_t fit_function(Double_t *v,Double_t *par)
 {
   int n = int(v[0]*5);
-  int shift = int(par[3]);
-  TH1F *WLS_contribution = convoluted_pulse_WLS;
-  TH1F *fscint_contribution = convoluted_pulse_fscint;
-  return par[0]*convoluted_pulse_fscint->GetBinContent(n) + par[1]*convoluted_pulse_WLS->GetBinContent(n+shift) + par[2];
+  int WLS_shift = int(par[3]);
+  int fscint_shift = int(par[4]);
+  return par[0]*convoluted_pulse_fscint->GetBinContent(n+1+fscint_shift) + par[1]*convoluted_pulse_WLS->GetBinContent(n+1+WLS_shift) + par[2];
 }
 
 int main(int argc, char **argv)
 {
 TApplication theApp("tapp", &argc, argv);
-TCanvas *canvas = new TCanvas("c","c");
+TCanvas *canvas = new TCanvas("convolve","convolve");
 
 TFile *final = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/merged_crystal4apd.root");
 TFile *elecs = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/apd_plus_electronics.root");
@@ -99,26 +98,26 @@ TH1F *fscint_hist0 = (TH1F*) fscint->Get("timeArrival_scint");
 TH1F *WLS_hist = new TH1F("WLS_hist","WLS",1024,-0.1,204.7);
 TH1F *fscint_hist = new TH1F("fscint_hist","fiber scintillation",1024,-0.1,204.7);
 for (int i = 0;i < 951;i++){
-  WLS_hist->SetBinContent(i,(WLS_hist0->GetBinContent(i+73))/1000000.0);
+  WLS_hist->SetBinContent(i,(WLS_hist0->GetBinContent(i+73))/10000000.0);
 }
 for (int i = 951;i < 1024;i++){
-  WLS_hist->SetBinContent(i,0.00011);
+  WLS_hist->SetBinContent(i,0);//0.00011);
 }
 for (int i = 0;i < 217;i++){
-  fscint_hist->SetBinContent(i,(fscint_hist0->GetBinContent(i+33))/5000000.0);
+  fscint_hist->SetBinContent(i,(fscint_hist0->GetBinContent(i+33))/50000000.0);
 }
 for (int i = 217;i < 517;i++){
-  fscint_hist->SetBinContent(i,0.00025);
+  fscint_hist->SetBinContent(i,0);//0.000025);
 }
 for (int i = 517;i < 1024;i++){
-  fscint_hist->SetBinContent(i,0.00007);
+  fscint_hist->SetBinContent(i,0);//0.000007);
 }
-TH2F *e_time_val = new TH2F("e_time_val","e_time_val",1024,-0.1,204.7,6000,-0.5,5.5);
-TH2F *apd1_time_val = new TH2F("apd1_time_val","apd1_time_val",1024,-0.1,204.7,6200*20,-2200*20,4000*20);
-TH2F *apd2_time_val = new TH2F("apd2_time_val","apd2_time_val",1024,-0.1,204.7,6200*20,-2200*20,4000*20);
-TH2F *apd3_time_val = new TH2F("apd3_time_val","apd3_time_val",1024,-0.1,204.7,6200*20,-2200*20,4000*20);
-TH2F *apd4_time_val = new TH2F("apd4_time_val","apd4_time_val",1024,-0.1,204.7,6200*20,-2200*20,4000*20);
-TF1 *f = new  TF1("f", "pow(exp(1.)*[1]*(x)/[0],[0])*exp(-[1]*(x))",0.,200.);
+TH2F *e_time_val = new TH2F("e_time_val","e_time_val",1024,-0.1,204.7,19500,-16.25,178.75);
+TH2F *apd1_time_val = new TH2F("apd1_time_val","apd1_time_val",1024,-0.1,204.7,124000,-44000,80000);
+TH2F *apd2_time_val = new TH2F("apd2_time_val","apd2_time_val",1024,-0.1,204.7,124000,-44000,80000);
+TH2F *apd3_time_val = new TH2F("apd3_time_val","apd3_time_val",1024,-0.1,204.7,124000,-44000,80000);
+TH2F *apd4_time_val = new TH2F("apd4_time_val","apd4_time_val",1024,-0.1,204.7,124000,-44000,80000);
+/*TF1 *f = new  TF1("f", "pow(exp(1.)*[1]*(x)/[0],[0])*exp(-[1]*(x))",0.,200.);
 f->SetParameters(3.0, 0.8);
 RooRealVar t("t","t", 0, 200);
 t.setBins(1024,"cache") ;
@@ -126,7 +125,7 @@ t.setBinning(RooBinning(1024,0,200));
 RooAbsPdf* rfa1 = RooFit::bindPdf(f,t);
 TH1* histoResponse = rfa1->createHistogram("t",1024);
 TGraph* waveGraphResp = new TGraph(histoResponse);
-WaveformNew* waveRespNew = new WaveformNew(histoResponse->GetNbinsX(),waveGraphResp->GetX(),waveGraphResp->GetY());
+WaveformNew* waveRespNew = new WaveformNew(histoResponse->GetNbinsX(),waveGraphResp->GetX(),waveGraphResp->GetY());*/
 
 etree->SetBranchAddress("WF_time2",WF_time2);
 etree->SetBranchAddress("WF_val2",WF_val2);
@@ -151,10 +150,10 @@ ftree->SetBranchAddress("nFibresOnY", nFibresOnY, &b_nFibresOnY);
     Long64_t ientry = etree->LoadTree(jentry);
     nb = etree->GetEntry(jentry);   nbytes += nb;
     for (int sample = 0;sample < 1009;sample++){
-      e_time_val->Fill(WF_time2[sample]-72.2,WF_val2[sample]/1000.0);
+      e_time_val->Fill(WF_time2[sample]-72.2,3.25*WF_val2[sample]/100.0);
     }
     for (int sample = 648;sample < 1024;sample++){
-      e_time_val->Fill(sample/5.0,-0.12);
+      e_time_val->Fill(sample/5.0,0);//-1.2);
     }
   }
 
@@ -163,7 +162,7 @@ ftree->SetBranchAddress("nFibresOnY", nFibresOnY, &b_nFibresOnY);
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
     Long64_t ientry = ftree->LoadTree(jentry);
     nb = ftree->GetEntry(jentry);   nbytes += nb;
-    if (TMath::Abs(x[0]-212.0)<1&&TMath::Abs(y[0]-299.5)<1)
+    if (TMath::Abs(x[0]-207.0)<0.5&&TMath::Abs(y[0]-294.5)<0.5)
     {
       for (int sample = 0;sample < 1009;sample++){
         apd1_time_val->Fill(WF_time6[sample]-28.6,20*WF_val6[sample]);
@@ -172,10 +171,10 @@ ftree->SetBranchAddress("nFibresOnY", nFibresOnY, &b_nFibresOnY);
         apd4_time_val->Fill(WF_time9[sample]-28.6,20*WF_val9[sample]);
       }
       for (int sample = 866;sample < 1024;sample++){
-        apd1_time_val->Fill(sample/5.0,-1000);
-        apd2_time_val->Fill(sample/5.0,-1000);
-        apd3_time_val->Fill(sample/5.0,-1000);
-        apd4_time_val->Fill(sample/5.0,-1000);
+        apd1_time_val->Fill(sample/5.0,0);//-1000);
+        apd2_time_val->Fill(sample/5.0,0);//-1000);
+        apd3_time_val->Fill(sample/5.0,0);//-1000);
+        apd4_time_val->Fill(sample/5.0,0);//-1000);
       }
     }
   }
@@ -190,10 +189,6 @@ TH1D *apd1_time_val_1D = apd1_time_val_prof->ProjectionX();
 TH1D *apd2_time_val_1D = apd2_time_val_prof->ProjectionX();
 TH1D *apd3_time_val_1D = apd3_time_val_prof->ProjectionX();
 TH1D *apd4_time_val_1D = apd4_time_val_prof->ProjectionX();
-//e_time_val_1D->Rebin(64);
-//apd1_time_val_1D->Rebin(64);
-//e_time_val_1D->Smooth(10000);
-//apd1_time_val_1D->Smooth(10000);
 TGraph* e_time_val_graph = new TGraph(e_time_val_1D);
 TGraph* WLS_graph = new TGraph(WLS_hist);
 TGraph* fscint_graph = new TGraph(fscint_hist);
@@ -224,12 +219,19 @@ WaveformNew *convoluted_fscint = con->fftConvolute(fscint_WFN,e_time_val_WFN);
 //WaveformNew *convoluted = con->fftConvolute(WLS_WFN,waveRespNew);
 //TH1F* hist_deconvolved_apd1 = deconvolved_apd1->get_histo("deconvolved_apd1");
 //TH1F* hist_convolved_apd1 = convolved_apd1->get_histo("convolved_apd1");
-convoluted_pulse_WLS = convoluted_WLS->get_histo("convoluted_pulse_WLS");
+convoluted_pulse_WLS = convoluted_WLS->get_histo("convoluted pulse WLS");
 convoluted_pulse_fscint = convoluted_fscint->get_histo("convoluted pulse fiber scintillation");
-convoluted_pulse_WLS->Draw();
+convoluted_pulse_WLS->SetLineWidth(0);
+convoluted_pulse_fscint->SetLineWidth(0);
+TFile *convoluted_pulses = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/convoluted_pulses.root","recreate");
+convoluted_pulses->cd();
+convoluted_pulse_WLS->Write();
+convoluted_pulse_fscint->Write();
+//apd1_time_val_1D->SetLineWidth(0);
+apd1_time_val_1D->Draw();
+convoluted_pulse_WLS->Draw("same");
 convoluted_pulse_fscint->Draw("SAME");
 //histoResponse->Draw();
-apd1_time_val_1D->Draw();
 //e_time_val_1D->Draw();
 //hist_convolved_apd1->Draw();
 //hist_deconvolved_apd1->Draw();
@@ -247,16 +249,19 @@ for (int i = 0; i < 1024 ; i++){
 double WLS_ratio = 0.5; //    WLS/(WLS+fscint)
 double c_fscint = 1;
 double c_WLS = 1;
-TF1 *func = new TF1("fit",fit_function,0,132,3);
-func->SetParameters(1,1,0,0);
-func->SetParNames("fscint constant","WLS constant","adding constant","shifting constant");
+TF1 *func = new TF1("fit",fit_function,0,132,2);
+func->SetParameters(1,1,0,0,0);
+func->SetParNames("fscint constant","WLS constant","adding constant","WLS shift","fscint shift");
+func->SetParLimits(0,0,1000);
+func->SetParLimits(1,0,1000);
 apd1_time_val_1D->Fit("fit","","",0,50);
 c_fscint = func->GetParameter(0);
 c_WLS = func->GetParameter(1);
 double adding_constant = func->GetParameter(2);
-double shifting_constant = func->GetParameter(3);
+double WLS_shift = func->GetParameter(3);
+double fscint_shift = func->GetParameter(4);
 WLS_ratio = c_WLS/(c_WLS+c_fscint);
-cout << c_fscint << "      " << c_WLS << "      " << WLS_ratio << "      " << adding_constant << "      " << shifting_constant << endl;
+cout << c_fscint << "      " << c_WLS << "      " << WLS_ratio << "      " << adding_constant << "      " << WLS_shift << "      " << fscint_shift << endl;
 
 //----------------------------------------------------------------------------------------------------------------------------
 canvas->Update();
