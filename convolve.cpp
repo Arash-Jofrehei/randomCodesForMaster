@@ -44,7 +44,7 @@ using namespace std;
 float WF_time2[1024];
 float WF_val2[1024];
 
-TH1D *normalized(TH1F *histogram,int nsamplesNormalization = 450){
+TH1D *normalized(TH1F *histogram,int nsamplesNormalization = 450,int offset = 100){
   string strName = "normalized ";
   strName.append(string(histogram->GetName()));
   const char *name = strName.c_str();
@@ -56,8 +56,11 @@ TH1D *normalized(TH1F *histogram,int nsamplesNormalization = 450){
   for (int i = 0;i < nsamplesNormalization;i++){
     integral += histogram->GetBinContent(i+1);
   }
-  for (int i = 0;i < 1024;i++){
-    normalized_histogram->SetBinContent(i+1,histogram->GetBinContent(i+1)/integral);
+  for (int i = 0;i < offset;i++){
+    normalized_histogram->SetBinContent(i+1,0);
+  }
+  for (int i = offset;i < 1024;i++){
+    normalized_histogram->SetBinContent(i+1,histogram->GetBinContent(i+1-offset)/integral);
   }
   return normalized_histogram;
 }
@@ -94,6 +97,19 @@ for (int i = 517;i < 1024;i++){
 TProfile *apd_plus_electronics = new TProfile("APD+electronics response","APD+electronics response",1024,-0.1,204.7);
 etree->SetBranchAddress("WF_time2",WF_time2);
 etree->SetBranchAddress("WF_val2",WF_val2);
+/*
+Long64_t nentries = etree->GetEntriesFast();
+Long64_t nbytes = 0, nb = 0;
+for (Long64_t jentry=0; jentry<nentries;jentry++) {
+  Long64_t ientry = etree->LoadTree(jentry);
+  nb = etree->GetEntry(jentry);   nbytes += nb;
+  for (int sample = 0;sample < 1009;sample++){
+    apd_plus_electronics->Fill(WF_time2[sample]-72.2,WF_val2[sample]);
+  }
+  for (int sample = 648;sample < 1024;sample++){
+    apd_plus_electronics->Fill(sample/5.0,0);
+  }
+}*/
 
 Long64_t nentries = etree->GetEntriesFast();
 Long64_t nbytes = 0, nb = 0;
@@ -125,13 +141,15 @@ TH1F *convoluted_pulse_WLS = convoluted_WLS->get_histo("WLS+CeF3 convoluted with
 TH1F *convoluted_pulse_fscint = convoluted_fscint->get_histo("fiber scintillation convoluted with APD+electronics");
 TH1D *normalized_convoluted_pulse_WLS = normalized(convoluted_pulse_WLS);
 TH1D *normalized_convoluted_pulse_fscint = normalized(convoluted_pulse_fscint);
+TH1D *normalized_apd_plus_electronics = normalized(apd_plus_electronics_WFN->get_histo("APD+electronics"));
 TFile *convoluted_pulses = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/convoluted_pulses.root","recreate");
 convoluted_pulses->cd();
-normalized_convoluted_pulse_WLS->Write();
+normalized_apd_plus_electronics->Write();
 normalized_convoluted_pulse_fscint->Write();
+normalized_convoluted_pulse_WLS->Write();
 normalized_convoluted_pulse_WLS->Draw();
 normalized_convoluted_pulse_fscint->Draw();
-apd_plus_electronics->Draw();
+normalized_apd_plus_electronics->Draw();
 //WLS_hist->Draw();
 //fscint_hist->Draw();
 
