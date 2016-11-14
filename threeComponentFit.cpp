@@ -13,20 +13,20 @@ float x_start = 197;
 float x_end = 217;
 float y_start = 284.5;
 float y_end = 304.5;
-TH1F* apd_plus_electronics;
+TH1F* convoluted_pulse_spike;
 TH1F* convoluted_pulse_fscint;
 TH1F* convoluted_pulse_WLS;
 double fit_function(double *v,double *par)
 {
   int n = int(v[0]*5);
-  //int shift = int(par[3]);
-  int shift1 = int(par[3]);
-  int shift2 = int(par[4]);
-  int shift3 = int(par[5]);
+  int shift = int(par[3]);
+  //int shift1 = int(par[3]);
+  //int shift2 = int(par[4]);
+  //int shift3 = int(par[5]);
   //the shift is the same for all three components. Fits don't work fine with different shifts and also fiber scintillation and WLS are APD convoluted with optical simulation WFs for which it was easy to find the rising point so I've already shifted the rising points to the same point.
-  //return par[0]*apd_plus_electronics->GetBinContent(n+1+shift)+par[1]*convoluted_pulse_fscint->GetBinContent(n+1+shift)+par[2]*convoluted_pulse_WLS->GetBinContent(n+1+shift)+par[4]; //I haven't used par[4] (vertical shift) here. It unstables the fits. For marginal crystals it might be useful since I noticed that due to the noise, the baseline is incorrect for many events.
+  return par[0]*convoluted_pulse_spike->GetBinContent(n+1+shift)+par[1]*convoluted_pulse_fscint->GetBinContent(n+1+shift)+par[2]*convoluted_pulse_WLS->GetBinContent(n+1+shift)+par[4]; //I haven't used par[4] (vertical shift) here. It unstables the fits. For marginal crystals it might be useful since I noticed that due to the noise, the baseline is incorrect for many events.
   
-  return par[0]*apd_plus_electronics->GetBinContent(n+1+shift1)+par[1]*convoluted_pulse_fscint->GetBinContent(n+1+shift2)+par[2]*convoluted_pulse_WLS->GetBinContent(n+1+shift2)+par[6];
+  //return par[0]*apd_plus_electronics->GetBinContent(n+1+shift1)+par[1]*convoluted_pulse_fscint->GetBinContent(n+1+shift2)+par[2]*convoluted_pulse_WLS->GetBinContent(n+1+shift3)+par[6];
 }
 
 double FWHM(TProfile *h){
@@ -40,10 +40,11 @@ void threeComponentFit(){
   TCanvas *canvas = new TCanvas("threeComponentFit","threeComponentFit");
   TFile *apd_profile_waveform_bins = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/apd_profile_waveform_bins_shift.root");
   TFile *convoluted_pulses = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/convoluted_pulses.root");
+  convoluted_pulse_spike = (TH1F*) convoluted_pulses->Get("normalized nuclear counter effect convoluted with APD+electronics");
   convoluted_pulse_fscint = (TH1F*) convoluted_pulses->Get("normalized fiber scintillation convoluted with APD+electronics");
   convoluted_pulse_WLS = (TH1F*) convoluted_pulses->Get("normalized WLS+CeF3 convoluted with APD+electronics");
   apd_plus_electronics = (TH1F*) convoluted_pulses->Get("normalized APD+electronics");
-  TF1 *func = new TF1("fit",fit_function,-100,200,5);
+  TF1 *func = new TF1("fit",fit_function,-100,200,4);
   func->SetLineColor(6);
   func->SetParNames("spike on APD","fiber scintillation","WLS","spike shift","WLS & fiber scintillation shift","WLS shift","vertical offset");
   func->SetParLimits(0,0,100000000);
@@ -94,14 +95,14 @@ void threeComponentFit(){
       for (int a = 0;a < 1;a++){
         apd[a][i][j]->SetLineWidth(0);
         //func->SetParameters(50000,1,1,30,0,0);
-        //func->SetParameters(50000,1,1,300,300,300);
-        func->SetParameters(30000,10000,30000,310,350,320);
+        func->SetParameters(20000,15000,20000,330);
+        //func->SetParameters(30000,10000,30000,310,350,320);
         //fitting process depends a lot on the initial shift and more importantly the limits on the shift. Current ones work fine
         for (int k = 0;k < 30;k++){              //works with a lot less than 100 times. Sometimes fails to fit a few bins for less than ~20
           //apd[a][i][j]->Fit("fit","Q","",25,80);
         }
-        for (int k = 0;k < 100;k++){              //works with a lot less than 100 times. Sometimes fails to fit a few bins for less than ~20
-          //apd[a][i][j]->Fit("fit","Q","",25,60);
+        for (int k = 0;k < 400;k++){              //works with a lot less than 100 times. Sometimes fails to fit a few bins for less than ~20
+          //apd[a][i][j]->Fit("fit","Q","",10,60);
           //apd[a][i][j]->Fit("fit","Q","",25,80); ####
           //if (i == 9 && j == 9) apd[a][i][j]->Fit("fit","","",10,80);
           //else apd[a][i][j]->Fit("fit","Q","",10,80);
@@ -118,7 +119,7 @@ void threeComponentFit(){
   }
   //func->SetParameters(30000,10000,30000,300);
   //func->SetParameters(30000,10000,30000,300,370,300);
-  func->SetParameters(20000,15000,20000,310,310);
+  func->SetParameters(20000,15000,20000,330);
   //func->SetParameters(20000,15000,20000,310,350,320);
   for (int i = 0;i < 40; i++){
     //apd[0][9][9]->Fit("fit","Q","",10,100);
@@ -126,7 +127,7 @@ void threeComponentFit(){
   for (int i = 0;i < 400; i++){ // to check the fit for a specific bin
     //apd[0][9][9]->SetLineWidth(0);
     //apd[0][1][1]->Fit("fit","","",25,60);
-    apd[0][9][9]->Fit("fit","Q","",10,120);
+    apd[0][1][1]->Fit("fit","Q","",25,80);
   }
   integrated_charge = func->GetParameter(0)+func->GetParameter(1)+func->GetParameter(2);
   spike_ratio = func->GetParameter(0)/integrated_charge;
@@ -143,18 +144,18 @@ void threeComponentFit(){
   name.append(to_string(fscint_ratio*100));
   name.append("% fiber scintillation(green) + ");
   name.append(to_string(WLS_ratio*100));
-  name.append("% WLS(blue);10ns - 120ns fit with two time shifts");
+  name.append("% WLS(blue);25ns - 80ns fit with one time shift - impinging the APD");
   const char *hist_title = name.c_str();
-  apd[0][9][9]->SetTitle(hist_title);
-  apd[0][9][9]->Draw();
+  apd[0][1][1]->SetTitle(hist_title);
+  apd[0][1][1]->Draw();
   
   TH1F *spike_hist = new TH1F("spike hist","nuclear counter effect contribution",1024,-0.1,204.7);
   TH1F *fscint_hist = new TH1F("fscint hist","fiber scintillation contribution",1024,-0.1,204.7);
   TH1F *WLS_hist = new TH1F("WLS hist","WLS contribution",1024,-0.1,204.7);
   for (int sample = 0;sample<1024;sample++){
-    spike_hist->SetBinContent(sample+1,(apd_plus_electronics->GetBinContent(sample+1+int(func->GetParameter(3))))*func->GetParameter(0));
-    fscint_hist->SetBinContent(sample+1,(convoluted_pulse_fscint->GetBinContent(sample+1+int(func->GetParameter(4))))*func->GetParameter(1));
-    WLS_hist->SetBinContent(sample+1,(convoluted_pulse_WLS->GetBinContent(sample+1+int(func->GetParameter(4))))*func->GetParameter(2));
+    spike_hist->SetBinContent(sample+1,(convoluted_pulse_spike->GetBinContent(sample+1+int(func->GetParameter(3))))*func->GetParameter(0));
+    fscint_hist->SetBinContent(sample+1,(convoluted_pulse_fscint->GetBinContent(sample+1+int(func->GetParameter(3))))*func->GetParameter(1));
+    WLS_hist->SetBinContent(sample+1,(convoluted_pulse_WLS->GetBinContent(sample+1+int(func->GetParameter(3))))*func->GetParameter(2));
   }
   spike_hist->SetLineColor(2);
   fscint_hist->SetLineColor(3);
@@ -164,13 +165,13 @@ void threeComponentFit(){
   WLS_hist->Draw("same");
   
   //spike_hist2D_apd[0]->SetTitle("FWHM for APD1 pulse (ns)");
-  //spike_hist2D_apd[3]->SetTitle("maximum amplitude - APD4");
-  //spike_hist2D_apd[3]->Draw("colz");
+  //spike_hist2D_apd[0]->SetTitle("maximum amplitude - APD4");
+  //spike_hist2D_apd[0]->Draw("colz");
   
   /*
   TCanvas *canvas2 = new TCanvas("threeComponentFit2","threeComponentFit2");
   fscint_hist2D_apd[0]->Draw("colz");
-  func->SetParameters(30000,10000,30000,300,370,300);
+  func->SetParameters(20000,15000,20000,330);
   for (int i = 0;i < 400; i++){ // to check the fit for a specific bin
     //apd[0][16][16]->Fit("fit","Q","",10,100);
   }
@@ -199,7 +200,7 @@ void threeComponentFit(){
   
   TCanvas *canvas3 = new TCanvas("threeComponentFit3","threeComponentFit3");
   WLS_hist2D_apd[0]->Draw("colz");
-  func->SetParameters(30000,10000,30000,300,370,300);
+  func->SetParameters(20000,15000,20000,330);
   for (int i = 0;i < 400; i++){ // to check the fit for a specific bin
     //apd[0][1][1]->Fit("fit","Q","",10,100);
   }
