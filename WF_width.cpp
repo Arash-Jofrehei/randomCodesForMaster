@@ -21,23 +21,25 @@ float fscint_ratio_jump = 0.002;
 TH1F* convoluted_pulse_spike;
 TH1F* convoluted_pulse_fscint;
 TH1F* convoluted_pulse_WLS;
-float Stat[5];
+float Stat[6];
 
 float *stat(TH1F *h){
   Stat[1] = h->FindFirstBinAbove(h->GetMaximum()/3);
   Stat[2] = h->GetMaximumBin();
-  Stat[3] = h->FindLastBinAbove(h->GetMaximum()/2);
+  Stat[3] = h->FindLastBinAbove(h->GetMaximum()/4);
   Stat[0] = h->GetBinContent(Stat[2]);
   Stat[4] = 100.0*h->GetBinContent((Stat[2]+Stat[3])/2)/Stat[0];
+  Stat[5] = h->FindFirstBinAbove(h->GetMaximum()/2);
   return Stat;
 }
 
 float *stat(TProfile *h){
   Stat[1] = h->FindFirstBinAbove(h->GetMaximum()/3);
   Stat[2] = h->GetMaximumBin();
-  Stat[3] = h->FindLastBinAbove(h->GetMaximum()/2);
+  Stat[3] = h->FindLastBinAbove(h->GetMaximum()/4);
   Stat[0] = h->GetBinContent(Stat[2]);
   Stat[4] = 100.0*h->GetBinContent((Stat[2]+Stat[3])/2)/Stat[0];
+  Stat[5] = h->FindFirstBinAbove(h->GetMaximum()/2);
   return Stat;
 }
 
@@ -50,6 +52,8 @@ void WF_width(){
   convoluted_pulse_WLS = (TH1F*) convoluted_pulses->Get("normalized WLS+CeF3 convoluted with APD+electronics");
   apd_plus_electronics = (TH1F*) convoluted_pulses->Get("normalized APD+electronics");
   TH1F *sum = new TH1F("sum","sum",1024,-0.1,204.7);
+  TH1F *sum1 = new TH1F("sum1","sum1",1024,-0.1,204.7);
+  TH1F *sum2 = new TH1F("sum2","sum2",1024,-0.1,204.7);
   
   TH2F *spike_hist2D_apd[4];
   spike_hist2D_apd[0] = new TH2F("spike_hist2D_apd1","nuclear counter effect contribution for APD1;X (mm);Y (mm)",nbins,x_start,x_end,nbins,y_start,y_end);
@@ -144,14 +148,14 @@ void WF_width(){
     }
   }*/
   
-  float apd_stat[4][nbins][nbins][8];
+  float apd_stat[4][nbins][nbins][10];
   for (int a = 0; a < 4; a++){
     for (int i = 0; i < nbins; i++){
       for (int j = 0; j < nbins; j++){
-        for (int k = 0; k < 5; k++){
+        for (int k = 0; k < 6; k++){
           apd_stat[a][i][j][k] = stat(apd[a][i][j])[k];
         }
-        apd_stat[a][i][j][7] = 1000000000;
+        apd_stat[a][i][j][8] = 1000000000;
       }
     }
   }
@@ -163,18 +167,20 @@ void WF_width(){
       sum->Add(convoluted_pulse_spike);
       sum->Add(convoluted_pulse_fscint,jump_fscint*fscint_ratio_jump);
       sum->Add(convoluted_pulse_WLS,jump_WLS*WLS_ratio_jump);
-      float stat_sum[5];
-      for (int l = 0; l < 5; l++) stat_sum[l] = stat(sum)[l];
+      float stat_sum[6];
+      for (int l = 0; l < 6; l++) stat_sum[l] = stat(sum)[l];
       for (int a = 0; a < 4; a++){
         for (int i = 0; i < nbins; i++){
           for (int j = 0; j < nbins; j++){
-            float d = TMath::Abs(stat_sum[4] - apd_stat[a][i][j][4]) + 100*TMath::Abs(stat_sum[2]-stat_sum[1] - (apd_stat[a][i][j][2] - apd_stat[a][i][j][1])) + 100*TMath::Abs(stat_sum[3]-stat_sum[2] - (apd_stat[a][i][j][3] - apd_stat[a][i][j][2]));
-            if (d < apd_stat[a][i][j][7]){
-              apd_stat[a][i][j][5] = jump_fscint*fscint_ratio_jump;
-              apd_stat[a][i][j][6] = jump_WLS*WLS_ratio_jump;
-              apd_stat[a][i][j][7] = d;
+            //if (i != 3 || j != 3) continue;
+            float d = TMath::Abs(stat_sum[4] - apd_stat[a][i][j][4]) + 500*TMath::Abs(stat_sum[2]-stat_sum[1] - (apd_stat[a][i][j][2] - apd_stat[a][i][j][1])) + 500*TMath::Abs(stat_sum[2]-stat_sum[5] - (apd_stat[a][i][j][2] - apd_stat[a][i][j][6])) + 100*TMath::Abs(stat_sum[3]-stat_sum[2] - (apd_stat[a][i][j][3] - apd_stat[a][i][j][2]));
+            if (d < apd_stat[a][i][j][8]){
+              apd_stat[a][i][j][6] = jump_fscint*fscint_ratio_jump;
+              apd_stat[a][i][j][7] = jump_WLS*WLS_ratio_jump;
+              apd_stat[a][i][j][8] = d;
+              apd_stat[a][i][j][9] = apd_stat[a][i][j][0]/stat_sum[0];
             }
-            if (i == (nbins-1) && j == (nbins-1) && apd_stat[a][i][j][7] == 1000000000) cout<<"APD"<<a<<"  column "<<i<<"  row "<<j<<"  was unsuccessful"<<endl;
+            //if (i == (nbins-1) && j == (nbins-1) && apd_stat[a][i][j][8] == 1000000000 && jump_WLS == int(max_WLS_spike_ratio/WLS_ratio_jump)-1) cout<<"APD"<<a<<"  column "<<i<<"  row "<<j<<"  was unsuccessful"<<endl;
           }
         }
       }
@@ -183,9 +189,15 @@ void WF_width(){
   for (int a = 0; a < 4; a++){
     for (int i = 0; i < nbins; i++){
       for (int j = 0; j < nbins; j++){
-        spike_hist2D_apd[a]->SetBinContent(i+1,j+1,(apd_stat[a][i][j][0]/(1+apd_stat[a][i][j][5]+apd_stat[a][i][j][6]))/100.0);
-        fscint_hist2D_apd[a]->SetBinContent(i+1,j+1,(apd_stat[a][i][j][0]/(1+apd_stat[a][i][j][5]+apd_stat[a][i][j][6]))*apd_stat[a][i][j][5]/100.0);
-        WLS_hist2D_apd[a]->SetBinContent(i+1,j+1,(apd_stat[a][i][j][0]/(1+apd_stat[a][i][j][5]+apd_stat[a][i][j][6]))*apd_stat[a][i][j][6]/100.0);
+        spike_hist2D_apd[a]->SetBinContent(i+1,j+1,apd_stat[a][i][j][9]/1000.0);
+        fscint_hist2D_apd[a]->SetBinContent(i+1,j+1,apd_stat[a][i][j][9]*apd_stat[a][i][j][6]/1000.0);
+        WLS_hist2D_apd[a]->SetBinContent(i+1,j+1,apd_stat[a][i][j][9]*apd_stat[a][i][j][7]/1000.0);
+        if (i == j && a == 0){
+          cout << i+1 << "    " << apd_stat[a][i][j][9]/1000.0 << "    " << apd_stat[a][i][j][9]*apd_stat[a][i][j][6]/1000.0 << "    " << apd_stat[a][i][j][9]*apd_stat[a][i][j][7]/1000.0 << endl;
+        }
+        if (i == 3 && j == 2 && a == 0){
+          cout << i+1 << "    " << apd_stat[a][i][j][9]/1000.0 << "    " << apd_stat[a][i][j][9]*apd_stat[a][i][j][6]/1000.0 << "    " << apd_stat[a][i][j][9]*apd_stat[a][i][j][7]/1000.0 << endl;
+        }
       }
     }
   }
@@ -194,4 +206,50 @@ void WF_width(){
   fscint_hist2D_apd[0]->Draw("colz");
   TCanvas *canvas3 = new TCanvas("WF width3","WF width3");
   WLS_hist2D_apd[0]->Draw("colz");
+  int shift;
+  TCanvas *canvas4 = new TCanvas("WF width4","WF width4");
+  apd[0][3][2]->Draw();
+  sum->Reset();
+  sum->Add(convoluted_pulse_spike,apd_stat[0][3][2][9]);
+  sum->Add(convoluted_pulse_fscint,apd_stat[0][3][2][9]*apd_stat[0][3][2][6]);
+  sum->Add(convoluted_pulse_WLS,apd_stat[0][3][2][9]*apd_stat[0][3][2][7]);
+  shift = stat(sum)[2]-stat(apd[0][3][2])[2];
+  for (int i = 0;i < 1024;i++){
+    if (i < 1024-shift){
+      sum->SetBinContent(i+1,sum->GetBinContent(i+1+shift));
+    }
+    else sum->SetBinContent(i+1,0);
+  }
+  sum->SetLineColor(2);
+  sum->Draw("same");
+  TCanvas *canvas5 = new TCanvas("WF width5","WF width5");
+  apd[0][10][10]->Draw();
+  sum1->Reset();
+  sum1->Add(convoluted_pulse_spike,apd_stat[0][10][10][9]);
+  sum1->Add(convoluted_pulse_fscint,apd_stat[0][10][10][9]*apd_stat[0][10][10][6]);
+  sum1->Add(convoluted_pulse_WLS,apd_stat[0][10][10][9]*apd_stat[0][10][10][7]);
+  shift = stat(sum1)[2]-stat(apd[0][10][10])[2];
+  for (int i = 0;i < 1024;i++){
+    if (i < 1024-shift){
+      sum1->SetBinContent(i+1,sum1->GetBinContent(i+1+shift));
+    }
+    else sum1->SetBinContent(i+1,0);
+  }
+  sum1->SetLineColor(2);
+  sum1->Draw("same");
+  TCanvas *canvas6 = new TCanvas("WF width6","WF width6");
+  apd[0][15][15]->Draw();
+  sum2->Reset();
+  sum2->Add(convoluted_pulse_spike,apd_stat[0][15][15][9]);
+  sum2->Add(convoluted_pulse_fscint,apd_stat[0][15][15][9]*apd_stat[0][15][15][6]);
+  sum2->Add(convoluted_pulse_WLS,apd_stat[0][15][15][9]*apd_stat[0][15][15][7]);
+  shift = stat(sum2)[2]-stat(apd[0][15][15])[2];
+  for (int i = 0;i < 1024;i++){
+    if (i < 1024-shift){
+      sum2->SetBinContent(i+1,sum2->GetBinContent(i+1+shift));
+    }
+    else sum2->SetBinContent(i+1,0);
+  }
+  sum2->SetLineColor(2);
+  sum2->Draw("same");
 }
