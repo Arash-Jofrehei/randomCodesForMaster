@@ -55,104 +55,22 @@ TH1F *Deconvolution(TH1F *p,TH1F *h,int size = 1024){
     temp[i] = h->GetBinContent(i+1);
   }
   float dummy;
-  for (int sample = 0;sample < size;sample++){
+  for (int sample = 0;sample < size-4;sample++){
     dummy = 0;
-    if (main[sample]>0) dummy = main[sample]/temp[0];
-    for (int i = sample;i < size;i++){
-      if (main[i]>=0 && temp[i-sample]>0 && main[i]/temp[i-sample] < dummy) dummy = main[i]/(1.0*temp[i-sample]);
+    if (main[sample]>0 && main[sample+1]>=0 && main[sample+2]>=0 && main[sample+3]>=0 && main[sample+4]>=0) dummy = main[sample]/temp[0];
+    for (int i = sample;i < size-4;i++){
+      if (main[i]>=0 && main[i+1]>=0 && main[i+2]>=0 && main[i+3]>=0 && main[i+4]>=0 && temp[i-sample]>=0 && main[i]/temp[i-sample] < dummy) dummy = main[i]/(1.0*temp[i-sample]);
+      //if (sample == 500) cout << i-sample+1 << "    " << main[i] << "    " << temp[i-sample] << "    " << dummy << endl;
     }
     for (int i = sample;i < size;i++){
       main[i] -= dummy*temp[i-sample];
-      if (main[i]<0 && i < 40 && sample < 5) cout << main[33] << "    " << dummy << endl;
+      //if (main[i]<0 && p->GetBinContent(i+1) > 0) cout << sample+1 << "    " << i+1 << "    " << p->GetBinContent(i+1) << "    " << main[i] << "    " << dummy << endl;
     }
     deconv->SetBinContent(sample+1,dummy);
-    //cout << sample+1 << "    " << dummy << endl;
   }
   return deconv;
 }
-/*
-TH1F *Deconvolution(TH1F *p,TH1F *h,int size = 1024){
-  int buffer_size = 10;
-  float dummy[buffer_size];
-  float dum = 0;
-  float mean_start = 0;
-  int sample = 0;
-  int negative_counter = 0;
-  float negative_fixer;
-  float negative_dum[10];
-  int bin_recurrence[1024];
-  for (int i = 0;i < 1024;i++) bin_recurrence[i] = 0;
-  while (sample < size){
-    dum = 0;
-    for (int i = 0;i < buffer_size;i++) dummy[i] = p->GetBinContent(sample+1+i);
-    for (int point = 0;point < sample;point++){
-      for (int i = 0;i < buffer_size;i++) dummy[i] -= deconv->GetBinContent(point+1)*h->GetBinContent(i+sample-point+1);
-    }
-    if (sample == 0){
-      for (int i = 0;i < buffer_size;i++) mean_start += dummy[i] / (buffer_size*h->GetBinContent(1+i));
-      dum = mean_start;
-    }
-    else{
-      for (int i = 0;i < buffer_size;i++){
-        dummy[i] /= p->GetBinContent(1)/mean_start;
-        if (h->GetBinContent(i+sample+1) == 0){
-          dum = dummy[0];
-          break;
-        }
-        dummy[i] *= h->GetBinContent(sample+1)/h->GetBinContent(i+sample+1);
-        dum += dummy[i]/buffer_size;
-      }
-    }
-    if (sample < 90 && sample > 65){
-      cout << sample << "    ";
-      for (int i = 0;i < 4;i++) cout << dummy[i] << "    ";
-      cout << dum << endl;
-    }
-    if (dum <= 0){
-      //negative_dum[negative_counter] = dum;
-      dum = 0;
-      //negative_counter++;
-    }
-    deconv->SetBinContent(sample+1,3*dum/4);
-    if (negative_counter == 10){
-      bin_recurrence[sample]+=1;
-      if (bin_recurrence[sample] > 2){
-        negative_counter = 0;
-       sample++;
-       continue;
-      }
-      negative_fixer = 0;
-      for (int i = 0; i < 10;i++){
-        negative_fixer += h->GetBinContent(1)*negative_dum[i]/(10.0*h->GetBinContent(i+2));
-      }
-      cout << sample-10 << "    " << deconv->GetBinContent(sample-9)+negative_fixer << endl;
-      negative_counter = 0;
-      if (deconv->GetBinContent(sample-9)+negative_fixer > 0) deconv->SetBinContent(sample-9,deconv->GetBinContent(sample-9)+negative_fixer);
-      else{
-        negative_fixer = h->GetBinContent(1)*(deconv->GetBinContent(sample-9))/(10.0*h->GetBinContent(2));
-        for (int i = 0; i < 9;i++){
-          negative_fixer += h->GetBinContent(1)*negative_dum[i]/(10.0*h->GetBinContent(i+3));
-        }
-        cout << sample-11 << "    " << deconv->GetBinContent(sample-10)+negative_fixer << endl;
-        if (deconv->GetBinContent(sample-10)+negative_fixer>0) deconv->SetBinContent(sample-10,deconv->GetBinContent(sample-10)+negative_fixer);
-        else{
-          negative_fixer = h->GetBinContent(1)*(deconv->GetBinContent(sample-10))/(10.0*h->GetBinContent(2)) + h->GetBinContent(1)*(deconv->GetBinContent(sample-9))/(10.0*h->GetBinContent(3));
-          for (int i = 0; i < 8;i++){
-            negative_fixer += h->GetBinContent(1)*negative_dum[i]/(10.0*h->GetBinContent(i+4));
-          }
-          cout << sample-12 << "    " << deconv->GetBinContent(sample-10)+negative_fixer << endl;
-          if (deconv->GetBinContent(sample-11)+negative_fixer>0) deconv->SetBinContent(sample-11,deconv->GetBinContent(sample-11)+negative_fixer);
-          else deconv->SetBinContent(sample-11,0);
-          sample--;
-          negative_counter = 0;
-        }
-      }
-      sample -= 10;
-    }
-    sample++;
-  }
-  return deconv;
-}*/
+
 /*
 TH1F* deconv;
 
@@ -240,20 +158,21 @@ void deconvolution(){
     if ((apd_plus_electronics->GetBinContent(i+1)/apd_plus_electronics->GetBinContent(apd_plus_electronics->GetMaximumBin())) > 0.001) break;
   }
   for(int i = 0;i < 1024-offset;i++){
-    apd_plus_electronics->SetBinContent(i+1,apd_plus_electronics->GetBinContent(i+1+offset));
+    if (apd_plus_electronics->GetBinContent(i+1+offset) > 0) apd_plus_electronics->SetBinContent(i+1,apd_plus_electronics->GetBinContent(i+1+offset));
+    else apd_plus_electronics->SetBinContent(i+1,0);
   }
   for(int i = 1024-offset;i < 1024;i++){
     apd_plus_electronics->SetBinContent(i+1,0);
   }
   offset = 0;
   for(int i = 0;i < 1024;i++){
-    if ((apd[0][2][2]->GetBinContent(i+1)/apd[0][2][2]->GetBinContent(apd[0][2][2]->GetMaximumBin())) < 0.001){
+    if ((apd[0][9][9]->GetBinContent(i+1)/apd[0][9][9]->GetBinContent(apd[0][9][9]->GetMaximumBin())) < 0.001){
       offset += 1;
     }
-    if ((apd[0][2][2]->GetBinContent(i+1)/apd[0][2][2]->GetBinContent(apd[0][2][2]->GetMaximumBin())) > 0.001) break;
+    if ((apd[0][9][9]->GetBinContent(i+1)/apd[0][9][9]->GetBinContent(apd[0][9][9]->GetMaximumBin())) > 0.001) break;
   }
   for(int i = 0;i < 1024-offset;i++){
-    test->SetBinContent(i+1,apd[0][2][2]->GetBinContent(i+1+offset));
+    test->SetBinContent(i+1,apd[0][9][9]->GetBinContent(i+1+offset));
   }
   for(int i = 1024-offset;i < 1024;i++){
     test->SetBinContent(i+1,0);
@@ -262,10 +181,11 @@ void deconvolution(){
   //apd_plus_electronics->Smooth(1000);
   //TH1D *dec_hist = Deconvolution(apd_plus_electronics,apd_plus_electronics);
   TH1F *dec_hist = Deconvolution(test,apd_plus_electronics);
-  test->Draw();
   conv->SetLineColor(2);
   convolution(dec_hist,apd_plus_electronics);
-  conv->Draw("same");
+  test->Add(conv,-1);
+  test->Draw();
+  //conv->Draw("same");
   TCanvas *canvas2 = new TCanvas("deconvolution2","deconvolution2");
   apd_plus_electronics->Draw();
   TCanvas *canvas3 = new TCanvas("deconvolution3","deconvolution3");
