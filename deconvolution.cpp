@@ -28,7 +28,6 @@ TH1F *smoothed(TH1F* histogram,int radius = 10,int iteration = 1,bool saveMAX = 
         for (int j = 0; j < 2*radius+1 ;j++){
           interval[j] = histogram->GetBinContent(i+1+j-radius);
         }
-        if (i == 511) cout << endl << endl;
         for (int j = 0;j < 2*radius+1 ;j++){
           for (int k = j;k < 2*radius+1 ;k++){
             if (interval[j] > interval[k]){
@@ -57,14 +56,15 @@ TH1F *Deconvolution(TH1F *p,TH1F *h,int size = 1024){
   float dummy;
   for (int sample = 0;sample < size-4;sample++){
     dummy = 0;
+    //cout << sample+1 << "    " << main[600] << endl;
     if (main[sample]>0 && main[sample+1]>=0 && main[sample+2]>=0 && main[sample+3]>=0 && main[sample+4]>=0) dummy = main[sample]/temp[0];
     for (int i = sample;i < size-4;i++){
       if (main[i]>=0 && main[i+1]>=0 && main[i+2]>=0 && main[i+3]>=0 && main[i+4]>=0 && temp[i-sample]>=0 && main[i]/temp[i-sample] < dummy) dummy = main[i]/(1.0*temp[i-sample]);
       //if (sample == 500) cout << i-sample+1 << "    " << main[i] << "    " << temp[i-sample] << "    " << dummy << endl;
     }
-    for (int i = sample;i < size;i++){
+    for (int i = sample;i < size-4;i++){
       main[i] -= dummy*temp[i-sample];
-      //if (main[i]<0 && p->GetBinContent(i+1) > 0) cout << sample+1 << "    " << i+1 << "    " << p->GetBinContent(i+1) << "    " << main[i] << "    " << dummy << endl;
+      if (main[i] < 0 && main[i-1] > 0 && main[i+1] > 0) main[i] = 0.5*(main[i-1]+main[i+1]);
     }
     deconv->SetBinContent(sample+1,dummy);
   }
@@ -107,6 +107,7 @@ void deconvolution(){
   deconv = new TH1F("d","d",1024,-0.1,204.7);
   conv = new TH1F("c","c",1024,-0.1,204.7);
   TH1F *test = new TH1F("test","test",1024,-0.1,204.7);
+  TH1F *test2 = new TH1F("test2","test2",1024,-0.1,204.7);
   TFile *apd_profile_waveform_bins = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/apd_profile_waveform_19bins_shift.root");
   TFile *convoluted_pulses = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/convoluted_pulses.root");
   apd_plus_electronics = (TH1F*) convoluted_pulses->Get("normalized APD+electronics");
@@ -141,9 +142,19 @@ void deconvolution(){
       }
     }
   }
-  TH1F *smoothed_test = smoothed(test,10,1,false);
+  for(int i = 0;i < 1024;i++){
+    test->SetBinContent(i+1,apd[0][2][2]->GetBinContent(i+1));
+  }
+  TH1F *smoothed_test = smoothed(smoothed(test,10,1,false),100,1,true);
   for (int i = 0;i < 1024;i++){
     test->SetBinContent(i+1,smoothed_test->GetBinContent(i+1));
+  }
+  for(int i = 0;i < 1024;i++){
+    test2->SetBinContent(i+1,apd[0][9][9]->GetBinContent(i+1));
+  }
+  TH1F *smoothed_test2 = smoothed(smoothed(test2,10,1,false),100,1,true);
+  for (int i = 0;i < 1024;i++){
+    test2->SetBinContent(i+1,smoothed_test2->GetBinContent(i+1));
   }
   TH1F *smoothed_apd_plus_electronics = smoothed(apd_plus_electronics,10,1,true);
   smoothed_apd_plus_electronics->Draw();
@@ -158,34 +169,35 @@ void deconvolution(){
     if ((apd_plus_electronics->GetBinContent(i+1)/apd_plus_electronics->GetBinContent(apd_plus_electronics->GetMaximumBin())) > 0.001) break;
   }
   for(int i = 0;i < 1024-offset;i++){
-    if (apd_plus_electronics->GetBinContent(i+1+offset) > 0) apd_plus_electronics->SetBinContent(i+1,apd_plus_electronics->GetBinContent(i+1+offset));
-    else apd_plus_electronics->SetBinContent(i+1,0);
+    /*if (apd_plus_electronics->GetBinContent(i+1+offset) > 0) */apd_plus_electronics->SetBinContent(i+1,apd_plus_electronics->GetBinContent(i+1+offset));
+    //else apd_plus_electronics->SetBinContent(i+1,0);
   }
   for(int i = 1024-offset;i < 1024;i++){
     apd_plus_electronics->SetBinContent(i+1,0);
   }
-  offset = 0;
+  /*offset = 0;
   for(int i = 0;i < 1024;i++){
-    if ((apd[0][9][9]->GetBinContent(i+1)/apd[0][9][9]->GetBinContent(apd[0][9][9]->GetMaximumBin())) < 0.001){
+    if ((apd[0][2][2]->GetBinContent(i+1)/apd[0][2][2]->GetBinContent(apd[0][2][2]->GetMaximumBin())) < 0.001){
       offset += 1;
     }
-    if ((apd[0][9][9]->GetBinContent(i+1)/apd[0][9][9]->GetBinContent(apd[0][9][9]->GetMaximumBin())) > 0.001) break;
+    if ((apd[0][2][2]->GetBinContent(i+1)/apd[0][2][2]->GetBinContent(apd[0][2][2]->GetMaximumBin())) > 0.001) break;
   }
   for(int i = 0;i < 1024-offset;i++){
-    test->SetBinContent(i+1,apd[0][9][9]->GetBinContent(i+1+offset));
+    test->SetBinContent(i+1,apd[0][2][2]->GetBinContent(i+1+offset));
   }
   for(int i = 1024-offset;i < 1024;i++){
     test->SetBinContent(i+1,0);
-  }
+  }*/
   //test->Smooth(1000);
   //apd_plus_electronics->Smooth(1000);
   //TH1D *dec_hist = Deconvolution(apd_plus_electronics,apd_plus_electronics);
   TH1F *dec_hist = Deconvolution(test,apd_plus_electronics);
+  TH1F *dec_hist2 = Deconvolution(test2,apd_plus_electronics);
   conv->SetLineColor(2);
   convolution(dec_hist,apd_plus_electronics);
-  test->Add(conv,-1);
-  test->Draw();
-  //conv->Draw("same");
+  //test->Add(conv,-1);
+  test2->Draw();
+  conv->Draw("same");
   TCanvas *canvas2 = new TCanvas("deconvolution2","deconvolution2");
   apd_plus_electronics->Draw();
   TCanvas *canvas3 = new TCanvas("deconvolution3","deconvolution3");
