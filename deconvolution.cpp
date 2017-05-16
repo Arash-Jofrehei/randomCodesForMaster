@@ -13,11 +13,20 @@ float x_start = -9.5;
 float x_end = 9.5;
 float y_start = -9.5;
 float y_end = 9.5;
+float WF_val6[1024];
+float WF_time6[1024];
+float Time[18];
+Float_t         x[2];
+Float_t         y[2];
+Int_t           nFibresOnX[2];
+Int_t           nFibresOnY[2];
+TBranch        *b_nFibresOnX;
+TBranch        *b_nFibresOnY;
 TH1F* apd_plus_electronics;
 TH1F* convoluted_pulse_fscint;
 TH1F* convoluted_pulse_WLS;
-TH1F *smoothed_histogram = new TH1F("smoothed histogram","smoothed histogram",1024,-0.1,204.7);
 
+TH1F *smoothed_histogram = new TH1F("smoothed histogram","smoothed histogram",1024,-0.1,204.7);
 TH1F *smoothed(TH1F* histogram,int radius = 10,int iteration = 1,bool saveMAX = true){
   float interval[2*radius+1];
   float buffer = -1000;
@@ -57,9 +66,11 @@ TH1F *Deconvolution(TH1F *p,TH1F *h,int size = 1024){
   for (int sample = 0;sample < size-4;sample++){
     dummy = 0;
     //cout << sample+1 << "    " << main[600] << endl;
-    if (main[sample]>0 && main[sample+1]>=0 && main[sample+2]>=0 && main[sample+3]>=0 && main[sample+4]>=0) dummy = main[sample]/temp[0];
+    dummy = main[sample]/temp[0];
+    //if (main[sample]>0 && main[sample+1]>=0 && main[sample+2]>=0 && main[sample+3]>=0 && main[sample+4]>=0) dummy = main[sample]/temp[0];
     for (int i = sample;i < size-4;i++){
-      if (main[i]>=0 && main[i+1]>=0 && main[i+2]>=0 && main[i+3]>=0 && main[i+4]>=0 && temp[i-sample]>=0 && main[i]/temp[i-sample] < dummy) dummy = main[i]/(1.0*temp[i-sample]);
+      //if (main[i]>=0 && main[i+1]>=0 && main[i+2]>=0 && main[i+3]>=0 && main[i+4]>=0 && temp[i-sample]>=0 && main[i]/temp[i-sample] < dummy && i < (sample+250)) dummy = main[i]/(1.0*temp[i-sample]);
+      if (TMath::Abs(main[i]/temp[i-sample]) < TMath::Abs(dummy) && i < (sample+150)) dummy = main[i]/(1.0*temp[i-sample]);
       //if (sample == 500) cout << i-sample+1 << "    " << main[i] << "    " << temp[i-sample] << "    " << dummy << endl;
     }
     for (int i = sample;i < size-4;i++){
@@ -104,13 +115,22 @@ TH1F *convolution(TH1F *f1,TH1F *f2,int size = 1024){
 
 void deconvolution(){
   TCanvas *canvas = new TCanvas("deconvolution","deconvolution");
+  TFile *final = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/merged_crystal4apd.root");
+  TTree *ftree = (TTree*) final->Get("h4");
+  ftree->SetBranchAddress("WF_val6",WF_val6);
+  ftree->SetBranchAddress("WF_time6",WF_time6);
+  ftree->SetBranchAddress("Time",Time);
+  ftree->SetBranchAddress("x", x);
+  ftree->SetBranchAddress("y", y);
+  ftree->SetBranchAddress("nFibresOnX", nFibresOnX, &b_nFibresOnX);
+  ftree->SetBranchAddress("nFibresOnY", nFibresOnY, &b_nFibresOnY);
   deconv = new TH1F("d","d",1024,-0.1,204.7);
   conv = new TH1F("c","c",1024,-0.1,204.7);
-  TH1F *test = new TH1F("test","test",1024,-0.1,204.7);
-  TH1F *test2 = new TH1F("test2","test2",1024,-0.1,204.7);
+  TH1F *test = new TH1F("APD1 fiber WF(black) - conv. of deconv. (red) valid for positive values","APD1 fiber WF(black) - conv. of deconv. (red) valid for positive values;time(ns)",1024,-0.1,204.7);
+  TH1F *test2 = new TH1F("APD1 center of crystal(black) - conv. of deconv. (red) valid for positive values","APD1 center of crystal(black) - conv. of deconv. (red) valid for positive values;time(ns)",1024,-0.1,204.7);
   TFile *apd_profile_waveform_bins = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/apd_profile_waveform_19bins_shift.root");
   TFile *convoluted_pulses = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/H4Analysis/ntuples/convoluted_pulses.root");
-  apd_plus_electronics = (TH1F*) convoluted_pulses->Get("normalized APD+electronics");
+  apd_plus_electronics = (TH1F*) convoluted_pulses->Get("APD+electronics");
   TH2F *spike_hist2D_apd[4];
   spike_hist2D_apd[0] = new TH2F("spike_hist2D_apd1","nuclear counter effect contribution for APD1;X (mm);Y (mm)",nbins,x_start,x_end,nbins,y_start,y_end);
   spike_hist2D_apd[1] = new TH2F("spike_hist2D_apd2","nuclear counter effect contribution for APD2;X (mm);Y (mm)",nbins,x_start,x_end,nbins,y_start,y_end);
@@ -191,15 +211,52 @@ void deconvolution(){
   //test->Smooth(1000);
   //apd_plus_electronics->Smooth(1000);
   //TH1D *dec_hist = Deconvolution(apd_plus_electronics,apd_plus_electronics);
-  TH1F *dec_hist = Deconvolution(test,apd_plus_electronics);
-  TH1F *dec_hist2 = Deconvolution(test2,apd_plus_electronics);
+  
+  TH1F *waveform = new TH1F("waveform","waveform",1024,-0.1,204.7);
+  TH1F *total_deconv = new TH1F("overall deconvolution of signals from APD1","overall deconvolution of signals from APD1 near center;time (ns)",1024,-0.1,204.7);
+  Long64_t nentries = ftree->GetEntriesFast();
+  Long64_t nbytes = 0, nb = 0;
+  for (Long64_t jentry=0; jentry<60000/*nentries*/;jentry++){
+    if (jentry%1000 == 0) cout << jentry << " / " << nentries << endl;
+    Long64_t ientry = ftree->LoadTree(jentry);
+    nb = ftree->GetEntry(jentry);   nbytes += nb;
+    if (TMath::Abs(x[1]-207.0)>1||TMath::Abs(y[1]-294.5)>1) continue;
+    waveform->Reset();
+    for (int sample = 0;sample < 1024;sample++){
+      waveform->Fill(30+WF_time6[sample]-Time[6],WF_val6[sample]);
+    }
+    total_deconv->Add(Deconvolution(smoothed(smoothed(waveform,10,1,false),100,1,true),apd_plus_electronics));
+  }
+  
+  
+  
+  
+  TH1F *dec_hist = new TH1F("dec_hist","deconvolved APD1 WF : fiber;time(ns)",1024,-0.1,204.7);
+  dec_hist->Add(Deconvolution(test,apd_plus_electronics));
+  TH1F *dec_hist2 = new TH1F("dec_hist2","deconvolved APD1 WF : center;time(ns)",1024,-0.1,204.7);
+  dec_hist2->Add(Deconvolution(test2,apd_plus_electronics));
+  TH1F *integral_dec_hist2 = new TH1F("integral of deconvolved APD1 WF : center;time(ns)","",1024,-0.1,204.7);
+  for (int i = 0;i < 1024;i++){
+    integral_dec_hist2->SetBinContent(i+1,dec_hist2->Integral(1,i+1));
+  }
+  integral_dec_hist2->Smooth(0);
+  for (int i = 1024;i > 1;i--){
+    //integral_dec_hist2->SetBinContent(i,integral_dec_hist2->GetBinContent(i)-integral_dec_hist2->GetBinContent(i-1));
+  }
   conv->SetLineColor(2);
-  convolution(dec_hist,apd_plus_electronics);
+  convolution(dec_hist2,apd_plus_electronics);
   //test->Add(conv,-1);
   test2->Draw();
+  conv->Smooth(10);
   conv->Draw("same");
+  total_deconv->Draw();
   TCanvas *canvas2 = new TCanvas("deconvolution2","deconvolution2");
   apd_plus_electronics->Draw();
-  TCanvas *canvas3 = new TCanvas("deconvolution3","deconvolution3");
-  dec_hist->Draw();
+  integral_dec_hist2->Draw();
+  TH1F *conv_center = convolution(total_deconv,apd_plus_electronics);
+  conv_center->Draw();
+  test2->Scale(conv_center->GetBinContent(conv_center->GetMaximumBin())/test2->GetBinContent(test2->GetMaximumBin()));
+  test2->Draw("same");
+  /*TCanvas *canvas3 = new TCanvas("deconvolution3","deconvolution3");
+  dec_hist2->Draw();*/
 }
