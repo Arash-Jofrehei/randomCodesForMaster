@@ -55,26 +55,25 @@ TH1F *smoothed(TH1F* histogram,int radius = 10,int iteration = 1,bool saveMAX = 
 
 TH1F* deconv;
 
-TH1F *Deconvolution(TH1F *p,TH1F *h,int size = 1024){
+TH1F *Deconvolution(TH1F *p,TH1F *h,int horizon = 150,int size = 1024){
   float main[size];
-  float temp[size];
+  float templ[size];
   for (int i = 0;i < size;i++){
     main[i] = p->GetBinContent(i+1);
-    temp[i] = h->GetBinContent(i+1);
+    templ[i] = h->GetBinContent(i+1);
   }
   float dummy;
   for (int sample = 0;sample < size-4;sample++){
     dummy = 0;
-    //cout << sample+1 << "    " << main[600] << endl;
-    dummy = main[sample]/temp[0];
-    //if (main[sample]>0 && main[sample+1]>=0 && main[sample+2]>=0 && main[sample+3]>=0 && main[sample+4]>=0) dummy = main[sample]/temp[0];
+    dummy = main[sample]/templ[0];
+    //if (main[sample]>0 && main[sample+1]>=0 && main[sample+2]>=0 && main[sample+3]>=0 && main[sample+4]>=0) dummy = main[sample]/templ[0];
     for (int i = sample;i < size-4;i++){
-      //if (main[i]>=0 && main[i+1]>=0 && main[i+2]>=0 && main[i+3]>=0 && main[i+4]>=0 && temp[i-sample]>=0 && main[i]/temp[i-sample] < dummy && i < (sample+250)) dummy = main[i]/(1.0*temp[i-sample]);
-      if (TMath::Abs(main[i]/temp[i-sample]) < TMath::Abs(dummy) && i < (sample+150)) dummy = main[i]/(1.0*temp[i-sample]);
-      //if (sample == 500) cout << i-sample+1 << "    " << main[i] << "    " << temp[i-sample] << "    " << dummy << endl;
+      //if (main[i]>=0 && main[i+1]>=0 && main[i+2]>=0 && main[i+3]>=0 && main[i+4]>=0 && templ[i-sample]>=0 && main[i]/templ[i-sample] < dummy && i < (sample+250)) dummy = main[i]/(1.0*templ[i-sample]);
+      if (TMath::Abs(main[i]/templ[i-sample]) < TMath::Abs(dummy) && i < (sample+horizon)) dummy = main[i]/(1.0*templ[i-sample]);
+      //if (sample == 500) cout << i-sample+1 << "    " << main[i] << "    " << templ[i-sample] << "    " << dummy << endl;
     }
     for (int i = sample;i < size-4;i++){
-      main[i] -= dummy*temp[i-sample];
+      main[i] -= dummy*templ[i-sample];
       if (main[i] < 0 && main[i-1] > 0 && main[i+1] > 0) main[i] = 0.5*(main[i-1]+main[i+1]);
     }
     deconv->SetBinContent(sample+1,dummy);
@@ -213,19 +212,36 @@ void deconvolution(){
   //TH1D *dec_hist = Deconvolution(apd_plus_electronics,apd_plus_electronics);
   
   TH1F *waveform = new TH1F("waveform","waveform",1024,-0.1,204.7);
+  TH1F *smoothed_waveform = new TH1F("smoothed waveform","smoothed waveform",1024,-0.1,204.7);
   TH1F *total_deconv = new TH1F("overall deconvolution of signals from APD1","overall deconvolution of signals from APD1 near center;time (ns)",1024,-0.1,204.7);
   Long64_t nentries = ftree->GetEntriesFast();
   Long64_t nbytes = 0, nb = 0;
-  for (Long64_t jentry=0; jentry<60000/*nentries*/;jentry++){
+  for (Long64_t jentry=0; jentry<nentries;jentry++){
     if (jentry%1000 == 0) cout << jentry << " / " << nentries << endl;
     Long64_t ientry = ftree->LoadTree(jentry);
     nb = ftree->GetEntry(jentry);   nbytes += nb;
+    //if (TMath::Abs(x[1]-207.0+7)>1||TMath::Abs(y[1]-294.5+7)>1) continue;
     if (TMath::Abs(x[1]-207.0)>1||TMath::Abs(y[1]-294.5)>1) continue;
     waveform->Reset();
     for (int sample = 0;sample < 1024;sample++){
       waveform->Fill(30+WF_time6[sample]-Time[6],WF_val6[sample]);
     }
-    total_deconv->Add(Deconvolution(smoothed(smoothed(waveform,10,1,false),100,1,true),apd_plus_electronics));
+    smoothed_waveform->Reset();
+    smoothed_waveform->Add(smoothed(smoothed(waveform,10,1,false),150,1,true));
+    /*offset = -50;
+    for(int i = 0;i < 1024;i++){
+      if ((smoothed_waveform->GetBinContent(i+1)/smoothed_waveform->GetBinContent(smoothed_waveform->GetMaximumBin())) < 0.005){
+        offset += 1;
+      }
+      if ((smoothed_waveform->GetBinContent(i+1)/smoothed_waveform->GetBinContent(smoothed_waveform->GetMaximumBin())) > 0.005) break;
+    }
+    for(int i = 0;i < 1024-offset;i++){
+      smoothed_waveform->SetBinContent(i+1,smoothed_waveform->GetBinContent(i+1+offset));
+    }
+    for(int i = 1024-offset;i < 1024;i++){
+      smoothed_waveform->SetBinContent(i+1,0);
+    }*/
+    total_deconv->Add(Deconvolution(smoothed_waveform,apd_plus_electronics,100));
   }
   
   
@@ -254,6 +270,7 @@ void deconvolution(){
   apd_plus_electronics->Draw();
   integral_dec_hist2->Draw();
   TH1F *conv_center = convolution(total_deconv,apd_plus_electronics);
+  conv_center->SetTitle("APD1 center of crystal(black) - overall conv. of deconv. per event(red) valid for positive values;time(ns)");
   conv_center->Draw();
   test2->Scale(conv_center->GetBinContent(conv_center->GetMaximumBin())/test2->GetBinContent(test2->GetMaximumBin()));
   test2->Draw("same");
