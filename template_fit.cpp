@@ -2,6 +2,8 @@
 #include "Math/Interpolator.h"
 
 using namespace std;
+const int nEventTimes = 2;
+string n_event_times = to_string(nEventTimes);
 const int nsamples = 150;
 const int nboards = 3;
 const int nchannels_per_board = 5;
@@ -30,6 +32,8 @@ unsigned int event;
 unsigned int Run;
 unsigned int Spill;
 unsigned int Event;
+ULong64_t evtTime[nEventTimes];
+ULong64_t eventTime[nEventTimes];
 
 double x_of_maximum = 267.219;
 double maximum_of_template = 3925.89;
@@ -57,6 +61,9 @@ void template_fit(){
   TTree *wireTree = (TTree*) file->Get("wire");
   wireTree->SetBranchAddress("X",WCX);
   wireTree->SetBranchAddress("Y",WCY);
+  TFile *raw_file = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/July2017/H4Analysis/data/raw/DataTree/old_C3_100.root");
+  TTree *raw_tree = (TTree*) raw_file->Get("H4tree");
+  raw_tree->SetBranchAddress("evtTime",evtTime);
   TFile *template_recos = new TFile("/afs/cern.ch/work/a/ajofrehe/cern-summer-2016/July2017/H4Analysis/ntuples/template_recos_C3_100.root","recreate");
   template_recos->cd();
   TTree *template_tree = new TTree("template_tree","template_tree");
@@ -73,6 +80,7 @@ void template_fit(){
   template_tree->Branch("run",&Run,"run/i");
   template_tree->Branch("spill",&Spill,"spill/i");
   template_tree->Branch("event",&Event,"event/i");
+  template_tree->Branch("eventTime",eventTime,("eventTime["+n_event_times+"]/l").c_str());
   TH1F *amp = new TH1F("amplitude obtained by templates","amplitude obtained by templates",100,0,4600);
   TH1F *template_time = new TH1F("time obtained by templates","time obtained by templates",120,-30,30);
   TH1F *template_shrink = new TH1F("shrink of templates","shrink of templates",60,0.95,1.22);
@@ -113,6 +121,14 @@ void template_fit(){
   
   const Long64_t nentries = h4tree->GetEntriesFast();
   Long64_t nbytes = 0, nb = 0,ientry;
+  
+  ULong64_t dummy_eventTime[nEventTimes][nentries];
+  for (Long64_t jentry=0; jentry<nentries;jentry++){
+    ientry = raw_tree->LoadTree(jentry);
+    nb = raw_tree->GetEntry(jentry);
+    for (int i = 0; i < nEventTimes; i++) dummy_eventTime[i][jentry] = evtTime[i];
+  }
+  
   float WC_dummy_X[nentries];
   float WC_dummy_Y[nentries];
   for (Long64_t jentry=0; jentry<nentries;jentry++){
@@ -150,6 +166,7 @@ void template_fit(){
     hodo_Y[0] = hodo_dummy_Y0[jentry];
     hodo_X[1] = hodo_dummy_X1[jentry];
     hodo_Y[1] = hodo_dummy_Y1[jentry];
+    for (int i = 0; i < nEventTimes; i++) eventTime[i] = dummy_eventTime[i][jentry];
     Run = run;
     Spill = spill;
     Event = event;
@@ -158,13 +175,11 @@ void template_fit(){
       max_time[channel] = ( 6.25 * waveform->GetMaximumBin() ) - 3.25;
       digiMax[channel] = waveform->GetMaximum();
       waveform->Draw();
-      //cout << jentry << " / " << nentries << "    " << channel << endl;
       if (waveform->GetMaximum() < 30){
         temp_amp[channel] = 0.001;
         temp_time[channel] = -10000;
       }else{
         func->SetParameters(1.2*waveform->GetMaximum(),0,1);
-        //cout << "sth" << endl;
         waveform->Fit("fit","Q","",240,340);
         //for (int i = 4000;i < 7000;i++) interpolated_mean_waveform->SetBinContent(i+1,func->GetParameter(0)*inter.Eval(func->GetParameter(2)*((i*937.5/nTempBins-0.125)-x_of_maximum-func->GetParameter(1))+x_of_maximum)/maximum_of_template);
         //interpolated_mean_waveform->SetLineColor(4);
@@ -175,7 +190,6 @@ void template_fit(){
         if (TMath::Abs(hodo_X[0]+6)<3&&TMath::Abs(hodo_Y[0]-7)<3 && channel == 12) amp->Fill(func->GetParameter(0));
         if (TMath::Abs(hodo_X[0]+6)<3&&TMath::Abs(hodo_Y[0]-7)<3 && channel == 12) template_time->Fill(func->GetParameter(1));
         if (TMath::Abs(hodo_X[0]+6)<3&&TMath::Abs(hodo_Y[0]-7)<3 && channel == 12) template_shrink->Fill(func->GetParameter(2));
-        //template_time->Fill(func->GetParameter(1));
         temp_amp[channel] = func->GetParameter(0);
         temp_time[channel] = func->GetParameter(1);
       }
