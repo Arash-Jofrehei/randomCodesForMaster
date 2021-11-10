@@ -64,6 +64,8 @@ string plotFormat = "png";
   float deltaPhi_cut = 2.78816;
   int MuTauCharge = -1;
   bool hasZDCinfo = false;
+  int nNchCategories = 4;
+  int firstNchCategory = 5;
 // end of cut definition
 // **************************
 
@@ -117,6 +119,12 @@ string inputFiles[] = {"flatTuple_AOD_data_2015_orderedPion_041021.root","flatTu
 void analyzer(const int nSamples = 2, string files[] = inputFiles){
 
   string basePlotDir = "/eos/user/a/ajofrehe/www/gtau/"+anaTag;
+  
+  string ABCDsysNames[2+nNchCategories];
+  ABCDsysNames[0] = "ABCD-sys-HFDown";
+  ABCDsysNames[1] = "ABCD-sys-HFUp";
+  string baseABCDsysName = "highNch_";
+  for (int n = 0; n < nNchCategories; n++) ABCDsysNames[n+2] = baseABCDsysName + to_string(firstNchCategory+n);
 
   //mkdir(directory.c_str(),S_IRWXU | S_IRWXG | S_IRWXO);
 //void run(vector<string> files){
@@ -127,8 +135,8 @@ void analyzer(const int nSamples = 2, string files[] = inputFiles){
   TH1F *cutflow[nSamples];
   //SetAtlasStyle();
   setTDRStyle();
-  int colors[] = {1,2,3,4,6,7,11};
-  int styles[] = {20,1,1,1,1,1,1};
+  int colors[] = {1,2,3,4,6,7,9,11,38,41,46};
+  int styles[] = {20,1,1,1,1,1,1,1,1,1,1};
 
   Double_t Red[2]   = { 1.00, .00};
   Double_t Green[2] = { 1.00, .00};
@@ -459,10 +467,10 @@ void analyzer(const int nSamples = 2, string files[] = inputFiles){
   histograms.push_back(h_recoPiZero_deltaphi_pion);
   TH2F *h_reco_pion_energy_HCAL_ECAL[nSamples];
   
-  TH1F *A_highNch_highHF[nSamples+2];
-  TH1F *B_lowNch_highHF[nSamples+2];
-  TH1F *C_highNch_lowHF[nSamples+2];
-  TH1F *D_lowNch_lowHF[nSamples+2];
+  TH1F *A_highNch_highHF[nSamples+2+nNchCategories];
+  TH1F *B_lowNch_highHF[nSamples+2+nNchCategories];
+  TH1F *C_highNch_lowHF[nSamples+2+nNchCategories];
+  TH1F *D_lowNch_lowHF[nSamples+2+nNchCategories];
   
   
   // MET
@@ -987,21 +995,21 @@ void analyzer(const int nSamples = 2, string files[] = inputFiles){
     
   } //loop on nSamples
   
-  for (int i = nSamples; i < nSamples+2; i++){
-  
-    A_highNch_highHF[i] = new TH1F(("A_highNch_highHF_" + tag[i]).c_str(),("#Delta#phi(#tau_{#mu}, #tau_{3prong}) high Nch - high HF " + tag[i]).c_str(), deltaphi_bins, 0, TMath::Pi());
+  for (int i = nSamples; i < nSamples+2+nNchCategories; i++){
+    
+    A_highNch_highHF[i] = new TH1F(("A_highNch_highHF_" + to_string(i)).c_str(),("#Delta#phi(#tau_{#mu}, #tau_{3prong}) high Nch - high HF " + to_string(i)).c_str(), deltaphi_bins, 0, TMath::Pi());
     A_highNch_highHF[i]->SetXTitle("#Delta#phi(#tau_{#mu}, #tau_{3prong}) high Nch - high HF"); A_highNch_highHF[i]->Sumw2();
     A_highNch_highHF[i]->SetLineColor(colors[i]); A_highNch_highHF[i]->SetMarkerStyle(styles[i]);
   
-    B_lowNch_highHF[i] = new TH1F(("B_lowNch_highHF_" + tag[i]).c_str(),("#Delta#phi(#tau_{#mu}, #tau_{3prong}) low Nch - high HF " + tag[i]).c_str(), deltaphi_bins, 0, TMath::Pi());
+    B_lowNch_highHF[i] = new TH1F((ABCDsysNames[i-nSamples]).c_str(),("#Delta#phi(#tau_{#mu}, #tau_{3prong}) - " + ABCDsysNames[i-nSamples]).c_str(), deltaphi_bins, 0, TMath::Pi());
     B_lowNch_highHF[i]->SetXTitle("#Delta#phi(#tau_{#mu}, #tau_{3prong}) low Nch - high HF"); B_lowNch_highHF[i]->Sumw2();
     B_lowNch_highHF[i]->SetLineColor(colors[i]); B_lowNch_highHF[i]->SetMarkerStyle(styles[i]);
   
-    C_highNch_lowHF[i] = new TH1F(("C_highNch_lowHF_" + tag[i]).c_str(),("#Delta#phi(#tau_{#mu}, #tau_{3prong}) high Nch - low HF " + tag[i]).c_str(), deltaphi_bins, 0, TMath::Pi());
+    C_highNch_lowHF[i] = new TH1F(("C_highNch_lowHF_" + to_string(i)).c_str(),("#Delta#phi(#tau_{#mu}, #tau_{3prong}) high Nch - low HF " + to_string(i)).c_str(), deltaphi_bins, 0, TMath::Pi());
     C_highNch_lowHF[i]->SetXTitle("#Delta#phi(#tau_{#mu}, #tau_{3prong}) high Nch - low HF"); C_highNch_lowHF[i]->Sumw2();
     C_highNch_lowHF[i]->SetLineColor(colors[i]); C_highNch_lowHF[i]->SetMarkerStyle(styles[i]);
   
-    D_lowNch_lowHF[i] = new TH1F(("D_lowNch_lowHF_" + tag[i]).c_str(),("#Delta#phi(#tau_{#mu}, #tau_{3prong}) low Nch - low HF " + tag[i]).c_str(), deltaphi_bins, 0, TMath::Pi());
+    D_lowNch_lowHF[i] = new TH1F(("D_lowNch_lowHF_" + to_string(i)).c_str(),("#Delta#phi(#tau_{#mu}, #tau_{3prong}) low Nch - low HF " + to_string(i)).c_str(), deltaphi_bins, 0, TMath::Pi());
     D_lowNch_lowHF[i]->SetXTitle("#Delta#phi(#tau_{#mu}, #tau_{3prong}) low Nch - low HF"); D_lowNch_lowHF[i]->Sumw2();
     D_lowNch_lowHF[i]->SetLineColor(colors[i]); D_lowNch_lowHF[i]->SetMarkerStyle(styles[i]);
   
@@ -1101,6 +1109,8 @@ void analyzer(const int nSamples = 2, string files[] = inputFiles){
     bool passedmu  = false;
     bool passedtau = false;
     bool passedcalo = true;
+    bool passedcaloDown = true;
+    bool passedcaloUp = true;
     bool passedZDC = true;
     bool passedMET = true;
     bool passedGamma = true;
@@ -1231,6 +1241,8 @@ void analyzer(const int nSamples = 2, string files[] = inputFiles){
       }
       averageHFeta /= (sumHFp+sumHFm);
       if (maxHFp > HFpLeading_high || maxHFm > HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcalo = false;
+      if (maxHFp > 0.9*HFpLeading_high || maxHFm > 0.9*HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcaloDown = false;
+      if (maxHFp > 1.1*HFpLeading_high || maxHFm > 1.1*HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcaloUp = false;
       if (passedcalo && passedNch) h_calo_energyHFp_sum[0]->Fill(sumHFp,tau_weight);
       if (passedcalo && passedNch) h_calo_energyHFm_sum[0]->Fill(sumHFm,tau_weight);
       if (passedcalo && passedNch) h_calo_energyHF_pm[0]->Fill(sumHFm,sumHFp,tau_weight);
@@ -1426,20 +1438,27 @@ void analyzer(const int nSamples = 2, string files[] = inputFiles){
     } //if (keepEvent)
     
     if (passedmu && triggered && passedtau && muon_charge*tauh_charge == -1){// && delta_phi >= deltaPhi_cut){
-      if (temp_nch >= 5 && temp_nch <= 8 && !passedcalo) A_highNch_highHF[0]->Fill(delta_phi,tau_weight);
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && !passedcalo) A_highNch_highHF[0]->Fill(delta_phi,tau_weight);
       if (temp_nch == 3 && passedNch && !passedcalo) B_lowNch_highHF[0]->Fill(delta_phi,tau_weight);
-      if (temp_nch >= 5 && temp_nch <= 8 && passedcalo) C_highNch_lowHF[0]->Fill(delta_phi,tau_weight);
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcalo) C_highNch_lowHF[0]->Fill(delta_phi,tau_weight);
       if (temp_nch == 3 && passedNch && passedcalo) D_lowNch_lowHF[0]->Fill(delta_phi,tau_weight);
       
-      if (temp_nch == 5 && !passedcalo) A_highNch_highHF[nSamples]->Fill(delta_phi,tau_weight);
-      if (temp_nch == 3 && passedNch && !passedcalo) B_lowNch_highHF[nSamples]->Fill(delta_phi,tau_weight);
-      if (temp_nch == 5 && passedcalo) C_highNch_lowHF[nSamples]->Fill(delta_phi,tau_weight);
-      if (temp_nch == 3 && passedNch && passedcalo) D_lowNch_lowHF[nSamples]->Fill(delta_phi,tau_weight);
+      if (temp_nch >= 5 && temp_nch < firstNchCategory+nNchCategories && !passedcaloDown) A_highNch_highHF[nSamples]->Fill(delta_phi,tau_weight);
+      if (temp_nch == 3 && passedNch && !passedcaloDown) B_lowNch_highHF[nSamples]->Fill(delta_phi,tau_weight);
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcaloDown) C_highNch_lowHF[nSamples]->Fill(delta_phi,tau_weight);
+      if (temp_nch == 3 && passedNch && passedcaloDown) D_lowNch_lowHF[nSamples]->Fill(delta_phi,tau_weight);
       
-      if (temp_nch == 6 && !passedcalo) A_highNch_highHF[nSamples+1]->Fill(delta_phi,tau_weight);
-      if (temp_nch == 3 && passedNch && !passedcalo) B_lowNch_highHF[nSamples+1]->Fill(delta_phi,tau_weight);
-      if (temp_nch == 6 && passedcalo) C_highNch_lowHF[nSamples+1]->Fill(delta_phi,tau_weight);
-      if (temp_nch == 3 && passedNch && passedcalo) D_lowNch_lowHF[nSamples+1]->Fill(delta_phi,tau_weight);
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && !passedcaloUp) A_highNch_highHF[nSamples+1]->Fill(delta_phi,tau_weight);
+      if (temp_nch == 3 && passedNch && !passedcaloUp) B_lowNch_highHF[nSamples+1]->Fill(delta_phi,tau_weight);
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcaloUp) C_highNch_lowHF[nSamples+1]->Fill(delta_phi,tau_weight);
+      if (temp_nch == 3 && passedNch && passedcaloUp) D_lowNch_lowHF[nSamples+1]->Fill(delta_phi,tau_weight);
+      
+      for (int cat = 0; cat < nNchCategories; cat++){      
+        if (temp_nch == firstNchCategory+cat && !passedcalo) A_highNch_highHF[nSamples+2+cat]->Fill(delta_phi,tau_weight);
+        if (temp_nch == 3 && passedNch && !passedcalo) B_lowNch_highHF[nSamples+2+cat]->Fill(delta_phi,tau_weight);
+        if (temp_nch == firstNchCategory+cat && passedcalo) C_highNch_lowHF[nSamples+2+cat]->Fill(delta_phi,tau_weight);
+        if (temp_nch == 3 && passedNch && passedcalo) D_lowNch_lowHF[nSamples+2+cat]->Fill(delta_phi,tau_weight);
+      }
     }
 
 //      aux->Fill();
@@ -2074,16 +2093,6 @@ void analyzer(const int nSamples = 2, string files[] = inputFiles){
   background->Multiply(C_highNch_lowHF[0]);
   background->Divide(A_highNch_highHF[0]);
   
-  TH1F *background_sysDown = (TH1F*)B_lowNch_highHF[nSamples]->Clone("background_ABCD-sysDown");
-  background_sysDown->SetTitle("Highest variation from ABCD background");
-  background_sysDown->Multiply(C_highNch_lowHF[nSamples]);
-  background_sysDown->Divide(A_highNch_highHF[nSamples]);
-  
-  TH1F *background_sysUp = (TH1F*)B_lowNch_highHF[nSamples+1]->Clone("background_ABCD-sysUp");
-  background_sysUp->SetTitle("Highest variation from ABCD background");
-  background_sysUp->Multiply(C_highNch_lowHF[nSamples+1]);
-  background_sysUp->Divide(A_highNch_highHF[nSamples+1]);
-  
   for (int i = 1; i < deltaphi_bins+1; i++){
     double S_error;
     double signal = D_lowNch_lowHF[1]->IntegralAndError(i, deltaphi_bins, S_error, "");
@@ -2157,6 +2166,60 @@ void analyzer(const int nSamples = 2, string files[] = inputFiles){
   cout << " **** **** **** **** " << endl << endl;
   //cout << "Inclusive cross section (Method 2): " << (nData - countBackgroundABCD) * crossSectionMC[0] / h_tau_mu_pt[1]->Integral() << " nb" << endl;
   
+  cout << "ABCD sys prefit HF variations: ";
+  float variation_up = -1000;
+  float variation_down = 1000;
+  int varHFup = 0;
+  int varHFdown = 0;
+  for (int variation = 0; variation < 2; variation++){
+    B_lowNch_highHF[nSamples+variation]->Multiply(C_highNch_lowHF[nSamples+variation]);
+    B_lowNch_highHF[nSamples+variation]->Divide(A_highNch_highHF[nSamples+variation]);
+    float var = B_lowNch_highHF[nSamples+variation]->Integral(maxSBbin, deltaphi_bins)-background->Integral(maxSBbin, deltaphi_bins);
+    cout << var << " ";
+    if (var > variation_up){
+      variation_up = var;
+      varHFup = variation;
+    }
+    if (var < variation_down){
+      variation_down = var;
+      varHFdown = variation;
+    }
+  }
+  cout << "\nHF variation UP is " << variation_up << " at " << ABCDsysNames[varHFup] << endl;
+  cout << "HF variation DOWN is " << variation_down << " at " << ABCDsysNames[varHFdown] << endl;
+  
+  
+  cout << "\nABCD sys prefit nch variations: ";
+  variation_up = -1000;
+  variation_down = 1000;
+  int varNchUp = 0;
+  int varNchDown = 0;
+  for (int variation = 2; variation < 2+nNchCategories; variation++){
+    B_lowNch_highHF[nSamples+variation]->Multiply(C_highNch_lowHF[nSamples+variation]);
+    B_lowNch_highHF[nSamples+variation]->Divide(A_highNch_highHF[nSamples+variation]);
+    float var = B_lowNch_highHF[nSamples+variation]->Integral(maxSBbin, deltaphi_bins)-background->Integral(maxSBbin, deltaphi_bins);
+    cout << var << " ";
+    if (var > variation_up){
+      variation_up = var;
+      varNchUp = variation-2+firstNchCategory;
+    }
+    if (var < variation_down){
+      variation_down = var;
+      varNchDown = variation-2+firstNchCategory;
+    }
+  }
+  cout << "\nnch variation UP is " << variation_up << " with nch = " << varNchUp << endl;
+  cout << "nch variation DOWN is " << variation_down << " with nch = " << varNchDown << endl << endl;
+  
+  TH1F *background_sysNchDown = (TH1F*)B_lowNch_highHF[nSamples+2]->Clone("ABCD-sys-nchDown");
+  background_sysNchDown->SetTitle("Highest variation from ABCD background from nch - Down");
+  //background_sysDown->Multiply(C_highNch_lowHF[nSamples]);
+  //background_sysDown->Divide(A_highNch_highHF[nSamples]);
+  
+  TH1F *background_sysNchUp = (TH1F*)B_lowNch_highHF[nSamples+3]->Clone("ABCD-sys-nchUp");
+  background_sysNchUp->SetTitle("Highest variation from ABCD background from nch - Up");
+  //background_sysUp->Multiply(C_highNch_lowHF[nSamples+1]);
+  //background_sysUp->Divide(A_highNch_highHF[nSamples+1]);
 
   
   TCanvas *c_tau_had_pv = new TCanvas("c_tau_had_pv", "c_tau_had_pv", 1500, 500); c_tau_had_pv->Divide(3,1);
@@ -3295,8 +3358,12 @@ TCanvas *c_tau_had = new TCanvas("c_tau_had", "c_tau_had", 2000, 3000); c_tau_ha
   c_output->cd(3); background->DrawCopy("ex0");
   background->SetDirectory(gDirectory); background->Write();
   
-  background_sysDown->SetDirectory(gDirectory); background_sysDown->Write();
-  background_sysUp->SetDirectory(gDirectory); background_sysUp->Write();
+  background_sysNchDown->SetDirectory(gDirectory); background_sysNchDown->Write();
+  background_sysNchUp->SetDirectory(gDirectory); background_sysNchUp->Write();
+  for (int var = 0; var < 2+nNchCategories; var++){
+    B_lowNch_highHF[nSamples+var]->SetDirectory(gDirectory); B_lowNch_highHF[nSamples+var]->Write();
+  }
+  
   
   /*for (int i = 1; i < nSamples; i++){
     c_output->cd(i+1); h_deltaphi_tau_mu_tau_hadron[i]->DrawCopy("e1");
