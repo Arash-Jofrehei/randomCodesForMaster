@@ -32,21 +32,54 @@ using namespace std;
 //#include "TStyle.h"
 #include "TREE_DATA.C"
 #include "TREE_MC.C"
-//#include "muon_tnp_weight.h"
-#include "GK_tnp_weight.h"
+//#include "GK_tnp_weight.h"
+#include "tnp_muon_UPC_PbPb2018.h"
 #include "tdrstyle.C"
 #include "CMS_lumi.C"
 //#include "/Applications/root/macros/AtlasStyle.C"
 
+#define blinded
 #define nch_cut
+#define plotting
 //#define post
 //#define ratio
+//#define ZDC0n0n
+//#define ZDCActive
+//#define ZDCMinus
+//#define ZDCPlus
+//#define ISOCUT
+//#define NOABCD
+#define SCALEABCD
+#define BSM
+
+int n_atau = 21;
 
 #ifdef post
 string anaTag = "postfit";
 #else
-string anaTag = "test";
+#ifdef ZDC0n0n
+string anaTag = "ZDC0n0n";
+#else
+#ifdef ZDCActive
+string anaTag = "ZDCActive";
+#else
+#ifdef ZDCMinus
+string anaTag = "ZDCMinus";
+#else
+#ifdef ZDCPlus
+string anaTag = "ZDCPlus";
+#else
+//string anaTag = "test";
+#ifdef blinded
+string anaTag = "blinded";
+#else
+string anaTag = "unblinded";
+#endif
 //string anaTag = "prefit";
+#endif
+#endif
+#endif
+#endif
 #endif
 
 string plotFormat = "png";
@@ -54,29 +87,38 @@ string plotFormat = "png";
 
 // **************************
 // cut definition
+  float barrel_mu_pt_cut = 3.5;
+  float endcap_mu_pt_cut = 2.5;
   bool tau_muon_isSoft = true;
   bool tau_muon_isGlobal = false;
   bool tau_muon_isTracker = false;
-  double tau_hadron_vertexprob = 0.005;
+  double tau_hadron_vertexprob = 0.1;
+  int   nCandMax = 1;
+  float ZDC_0n0n_eff = 0.68;
   float HFpLeading_low = 0;
   float HFmLeading_low = 0;
-  float HFpLeading_high = 6.0;
-  float HFmLeading_high = 6.0;
-  float pionLeadingCut = 0.5;
-  float pionSubLeadingCut = 0.3;
-  float pionSubSubLeadingCut = 0.3;
+  float HFpLeading_high = 5.0;
+  float HFmLeading_high = 5.0;
+  float highHFp = 8.0;
+  float highHFm = 8.0;
+  float HFpLeading_high_ZDCp = 5.0;
+  float HFmLeading_high_ZDCm = 5.0;
+  float pionLeadingCut = 1.0;
+  float pionSubLeadingCut = 0.6;
+  float pionSubSubLeadingCut = 0.5;
+  float tau_hadron_pt_cut = 1.0;
   float ditauMassCut = 0;
   float gammaPtCut = 0.;
   float minZDCp = 0;
   float minZDCm = 0;
-  float maxZDCp = 42000;
-  float maxZDCm = 60000;
+  float maxZDCp = 4200;
+  float maxZDCm = 6000;
   float ratioZDCpm = 4.2/6;
   int min_nch = 3;
   int max_nch = 3;
   float MET_cut = 20000;
   //float deltaPhi_cut = 2.78816;
-  float deltaPhi_cut = 0;
+  float deltaPhi_cut = 0.9*TMath::Pi();
   int MuTauCharge = -1;
   bool hasZDCinfo = false;
   int nNchCategories = 4;
@@ -92,6 +134,28 @@ double deltaphi(double phi1, double phi2)
 }
 
 string baseDir = "/eos/user/a/ajofrehe/gtau/ntuples/";
+  
+string atauFiles[] = {"mu3prong_UPCgen_atau0_090324.root",
+"mu3prong_UPCgen_minus10_090324.root",
+"mu3prong_UPCgen_minus09_090324.root",
+"mu3prong_UPCgen_minus08_090324.root",
+"mu3prong_UPCgen_minus07_090324.root",
+"mu3prong_UPCgen_minus06_090324.root",
+"mu3prong_UPCgen_minus05_090324.root",
+"mu3prong_UPCgen_minus04_090324.root",
+"mu3prong_UPCgen_minus03_090324.root",
+"mu3prong_UPCgen_minus02_090324.root",
+"mu3prong_UPCgen_minus01_090324.root",
+"mu3prong_UPCgen_plus01_090324.root",
+"mu3prong_UPCgen_plus02_090324.root",
+"mu3prong_UPCgen_plus03_090324.root",
+"mu3prong_UPCgen_plus04_090324.root",
+"mu3prong_UPCgen_plus05_090324.root",
+"mu3prong_UPCgen_plus06_090324.root",
+"mu3prong_UPCgen_plus07_090324.root",
+"mu3prong_UPCgen_plus08_090324.root",
+"mu3prong_UPCgen_plus09_090324.root",
+"mu3prong_UPCgen_plus10_090324.root",}; //03.02.2023
 
 //void run(string fileData, string fileMCS){//, string fileMCB1, string fileMCB2){
   //string files[2] = {fileData,fileMCS};
@@ -121,7 +185,15 @@ string baseDir = "/eos/user/a/ajofrehe/gtau/ntuples/";
 
 //string inputFiles[] = {"flatTuple_AOD_subdata_2018_110522.root","mu3prong_UPCgen_atau-10E-2_2018_270123.root","mu3prong_UPCgen_atau0E-2_2018_270123.root","mu3prong_UPCgen_atau10E-2_2018_270123.root"};
 
-string inputFiles[] = {"flatTuple_AOD_subdata_2018_110522.root","mu3prong_UPCgen_atau0E-2_2018_270123.root"};
+//string inputFiles[] = {"flatTuple_AOD_subdata_2018_110522.root","mu3prong_UPCgen_atau0E-2_2018_270123.root"};
+
+
+#ifdef blinded
+string inputFiles[] = {"flatTuple_AOD_subdata_2018_110522.root","mu3prong_UPCgen_atau0_090324.root"};
+#else
+string inputFiles[] = {"mu3prong_data_2018_noZDC_240324.root","mu3prong_UPCgen_atau0_090324.root"};
+#endif
+
 
 //string inputFiles[] = {"flatTuple_AOD_subdata_2018_190522.root","flatTuple_mcggTauTau_AOD_MadGraph_2018_190522.root","flatTuple_mcggTauTau_AOD_SuperChic_2018_190522.root"};
 
@@ -145,15 +217,26 @@ string inputFiles[] = {"flatTuple_AOD_subdata_2018_110522.root","mu3prong_UPCgen
 
 //string inputFiles[] = {"../ntuples/flatTuple_data_2015.root","../ntuples/flatTuple_mcggTauTau_2015.root","../ntuples/flatTuple_mcggBBbar_2015.root","../ntuples/flatTuple_mcggCCbar_2015.root","../ntuples/flatTuple_mcggTauTau_HydjetDrumMB_2018.root"};
 
-void main3prong(const int nSamples = 2, string files[] = inputFiles){
+void main3prong(int nSamples = 2, string files[] = inputFiles){
 
   string basePlotDir = "/eos/user/a/ajofrehe/www/gtau/2018/3prong/"+anaTag;
+  
+#ifdef BSM
+  nSamples += n_atau;
+#endif
   
   string ABCDsysNames[2+nNchCategories];
   ABCDsysNames[0] = "ABCD-sys-HFDown";
   ABCDsysNames[1] = "ABCD-sys-HFUp";
   string baseABCDsysName = "highNch_";
   for (int n = 0; n < nNchCategories; n++) ABCDsysNames[n+2] = baseABCDsysName + to_string(firstNchCategory+n);
+  
+  
+  string ABCDmuPtsysNames[2+nNchCategories];
+  ABCDmuPtsysNames[0] = "ABCD-muon-pt-sys-HFDown";
+  ABCDmuPtsysNames[1] = "ABCD-muon-pt-sys-HFUp";
+  string baseABCDmuPtsysName = "ABCD-muon-pt-highNch_";
+  for (int n = 0; n < nNchCategories; n++) ABCDmuPtsysNames[n+2] = baseABCDmuPtsysName + to_string(firstNchCategory+n);
 
   //mkdir(directory.c_str(),S_IRWXU | S_IRWXG | S_IRWXO);
 //void run(vector<string> files){
@@ -164,8 +247,16 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
   TH1F *cutflow[nSamples];
   //SetAtlasStyle();
   setTDRStyle();
-  int colors[] = {1,2,3,4,6,7,9,11,38,41,46};
-  int styles[] = {20,1,1,1,1,1,1,1,1,1,1};
+  int colors[] = {1,2,3,4,6,7,9,11,38,41,46,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+  int styles[] = {20,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+#ifdef BSM
+  for (int i=0; i<n_atau; i++){
+    colors[i+nSamples-n_atau] = 40;
+    if (i==0) colors[i+nSamples-n_atau] = 4;
+    if (i==1) colors[i+nSamples-n_atau] = 6;
+    if (i==n_atau-1) colors[i+nSamples-n_atau] = 7;
+  }
+#endif  
 
   Double_t Red[2]   = { 1.00, .00};
   Double_t Green[2] = { 1.00, .00};
@@ -175,12 +266,19 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
   Int_t nb=5;
   TColor::CreateGradientColorTable(2,Stops,Red,Green,Blue,nb);
 
-  root_file[0] = new TFile((baseDir+files[0]).c_str(),"READ");
+  //root_file[0] = new TFile((baseDir+files[0]).c_str(),"READ");
+  root_file[0] = new TFile((files[0]).c_str(),"READ");
   TREE = new TREE_DATA((TTree*)(root_file[0])->Get("tree"),root_file[0]);
   cutflow[0] = (TH1F*) root_file[0]->Get("ntuplizer/cutflow_perevt");
   cutflow[0]->SetLineColor(colors[0]); cutflow[0]->SetMarkerStyle(styles[0]);
   for (int i = 1; i < nSamples; i++){
+
+#ifdef BSM
+    if (i < (nSamples-n_atau)) root_file[i] = new TFile((baseDir+files[i]).c_str(),"READ");
+    else root_file[i] = new TFile((baseDir+atauFiles[i-(nSamples-n_atau)]).c_str(),"READ");
+#else
     root_file[i] = new TFile((baseDir+files[i]).c_str(),"READ");
+#endif
     TREEMCs[i-1] = new TREE_MC((TTree*)(root_file[i])->Get("tree"),root_file[i]);
     cutflow[i] = (TH1F*) root_file[i]->Get("ntuplizer/cutflow_perevt");
     cutflow[i]->SetLineColor(colors[i]); cutflow[i]->SetMarkerStyle(styles[i]);
@@ -200,8 +298,9 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
 // *******************************************
   
   
+  cmsText = "Private work";
   writeExtraText = true;       // if extra text
-  extraText  = "work in progress";  // default extra text is "Preliminary"
+  extraText  = "(CMS data/simulation)";  // default extra text is "Preliminary"
   //lumi_5TeV  = "PbPb - 404 #mub^{-1} ";
   lumi_5TeV  = "PbPb - 425 #mub^{-1} ";
   //lumi_5TeV  = "PbPb - 600 #mub^{-1} ";
@@ -259,22 +358,27 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
 // histogram declaration
   
   //float dataLumi = 404.318415215; // ub - 2015 data
+#ifdef blinded
   float dataLumi = 425.911750;  // ub - 2018 sub data
-  //float dataLumi = 600;  // ub - 2018 sub data
+#else
+  float dataLumi = 1638.163667652;  // ub - 2018 data
+#endif
   double PiZeroMass = 134.98; //MeV
   //string tag[] = {"", "Signal 2015 MadGraph", "Signal 2018 MadGraph", "Signal 2018 SuperChic", "Signal 2018 SuperChic + Embedded MB"};
   //string tag[] = {"", "MadGraph 2015", "CCbar 2015", "BBbar 2015", "BBbar 2018"};
   //string tag[] = {"","UPCgen atau-10E-2","UPCgen atau0E-2","UPCgen atau10E-2"};
   //string tags[] = {"","UPCgen atau-10E-2","UPCgen atau0E-2","UPCgen atau10E-2"};
-  string tag[] = {"","signal"};
-  string tags[] = {"","#gamma#gamma#rightarrow#tau#tau"};
+  //string tag[] = {"","signal"};
+  //string tags[] = {"","#gamma#gamma#rightarrow#tau#tau"};
+  string tag[] = {"", "signal","0","-0.1","-0.09","-0.08","-0.07","-0.06","-0.05","-0.04","-0.03","-0.02","-0.01","0.01","0.02","0.03","0.04","0.05","0.06","0.07","0.08","0.09","0.1"};
+  string tags[] = {"", "#gamma#gamma#rightarrow#tau#tau"};
   //string tag[] = {"", "MG signal", "SC signal"};
   //string tags[] = {"", "MG signal", "SC signal"};
   //string tags[] = {"", "#gamma#gamma#rightarrow#tau_{#mu}#tau_{3prong}", "SuperChic 2018", "CCbar 2015", "BBbar 2015"};
   //string tag[] = {"", "MC Signal", "MC 1prong", "MC 1prong + 0#pi^{0}", "MC 1prong + 1#pi^{0}", "MC 1prong + n#pi^{0}", "MC Signal 2018"};
   //string tag[] = {"", "PbPb reco 2015", "pp reco 2015", "pp reco 2018"};
   //string tag[] = {"", "MC Signal 2015", "Signal 2018", "SuperChic 2018"};
-  float nEvents[] = {1,1184600,2000000,623000,30000000,1,1,1,1};
+  float nEvents[] = {1,1184600,2000000,623000,30000000,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
   for (int s = 0; s < nSamples; s++) nEvents[s] = cutflow[s]->GetBinContent(1);
   //nEvents[4] /= 10;
   //for (int s = 0; s < nSamples; s++) nEvents[s] = cutflow[s]->GetBinContent(1)/200;
@@ -282,19 +386,25 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
   //float crossSectionMC[] = {570000,300000,1500,1500};
   //float crossSectionMC[] = {570,570,570,570,570,570};
   //float crossSectionMC[] = {680.211,847.772,1139.995};
-  float crossSectionMC[] = {847.772};
-  float SF[] = {1,1,1,1,1,1,1};
+  float crossSectionMC[] = {466.087,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000};
+  float SF[] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
   //float pT_SF = 1677539 / 2000000.0;
   float above3GeVSuperChic = 322461;
   float nAllEventsSuperChic = 2000000;
   //float pT_SF = above3GeVSuperChic / nAllEventsSuperChic;
   float pT_SF = 0.21;
-  float tau_pT_SF[] = {1,1,1,1,1,1};
+  float tau_pT_SF[] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
   //float tau_pT_SF[] = {1,pT_SF,pT_SF,pT_SF,pT_SF,pT_SF,1};
-  bool threeProng[] = {0,1,1,1,1,1,1};
+  bool threeProng[] = {0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
   for (int s = 1; s < nSamples; s++) if(nEvents[s] != 0) SF[s] = dataLumi * crossSectionMC[s-1] / nEvents[s];
   //float SF2[] = {1,0,0,0,0,0,0};
   for (int s = 1; s < nSamples; s++) if(cutflow[s]->GetBinContent(1) != 0) SF[s] = tau_pT_SF[s] * dataLumi * crossSectionMC[s-1] / cutflow[s]->GetBinContent(1);
+#ifdef ZDC0n0n
+  for (int s = 1; s < nSamples; s++) SF[s] *= ZDC_0n0n_eff;
+#endif
+#ifdef ZDCActive
+  for (int s = 1; s < nSamples; s++) SF[s] *= 1.0 - ZDC_0n0n_eff;
+#endif
   //SF[1] = nEvents[0]/nEvents[1];
   //SF[2] = nEvents[0]/nEvents[2];
 
@@ -318,6 +428,8 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
   vector<string> plotNames = std::vector<string>();
   vector<TCanvas*> ratioCanvas = std::vector<TCanvas*>();
   
+  const int nbins_muPt = 6;
+  float xbins_muPt[nbins_muPt+1] = {1.5,2.5,3.5,5.0,6.5,8.0,18};
   
   TH1F *h_cutflow[nSamples];
   TH1F *h_tau_mu_p[nSamples+4];
@@ -636,6 +748,13 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
   TH1F *C_highNch_lowHF[nSamples+2+nNchCategories];
   TH1F *D_lowNch_lowHF[nSamples+2+nNchCategories];
   
+  
+  TH1F *A_tau_mu_pt[nSamples+2+nNchCategories];
+  TH1F *B_tau_mu_pt[nSamples+2+nNchCategories];
+  TH1F *C_tau_mu_pt[nSamples+2+nNchCategories];
+  TH1F *D_tau_mu_pt[nSamples+2+nNchCategories];
+  
+  
   // ABCD validation
   TH1F *ABCD_validation[6];
   ABCD_validation[0] = new TH1F("ABCD_validation_highNch_highHF","ABCD validation highNch highHF;#Delta#phi(#tau_{#mu}, #tau_{3prong})", deltaphi_bins, 0, TMath::Pi());
@@ -671,6 +790,24 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
   h_sys_muon_SF_Down->Sumw2(); h_sys_muon_SF_Up->Sumw2();
   
   
+#ifdef BSM
+  TH1F *h_signal_atau_sys_muon_pt_SF_Down[n_atau];
+  TH1F *h_signal_atau_sys_muon_pt_SF_Up[n_atau];
+  for (int i=0; i<n_atau; i++){
+    string atau_muon_pt_sys_name = "gamgamToTauTau";
+    atau_muon_pt_sys_name += tag[i+nSamples-n_atau];
+    atau_muon_pt_sys_name += "_sys_SF";
+    h_signal_atau_sys_muon_pt_SF_Down[i] = new TH1F((atau_muon_pt_sys_name+"Down").c_str(),"signal muon SF uncertainty down",nbins_muPt, xbins_muPt);
+    h_signal_atau_sys_muon_pt_SF_Down[i]->Sumw2(); h_signal_atau_sys_muon_pt_SF_Down[i]->SetBinErrorOption(TH1::kPoisson);
+    h_signal_atau_sys_muon_pt_SF_Down[i]->SetLineColor(colors[1]); h_signal_atau_sys_muon_pt_SF_Down[i]->SetMarkerStyle(styles[1]);
+    
+    h_signal_atau_sys_muon_pt_SF_Up[i] = new TH1F((atau_muon_pt_sys_name+"Up").c_str(),"signal muon SF uncertainty up",nbins_muPt, xbins_muPt);
+    h_signal_atau_sys_muon_pt_SF_Up[i]->Sumw2(); h_signal_atau_sys_muon_pt_SF_Up[i]->SetBinErrorOption(TH1::kPoisson);
+    h_signal_atau_sys_muon_pt_SF_Up[i]->SetLineColor(colors[1]); h_signal_atau_sys_muon_pt_SF_Up[i]->SetMarkerStyle(styles[1]);
+  }
+#endif
+  
+  
   for (int i = 0; i < nSamples; i++){
     
     h_cutflow[i] = new TH1F(("h_cutflow_" + tag[i]).c_str(),("Analysis cutflow - " + tag[i]).c_str(),8, 0, 8);
@@ -696,6 +833,27 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
     D_lowNch_lowHF[i] = new TH1F(("D_lowNch_lowHF_" + tag[i]).c_str(),("#Delta#phi(#tau_{#mu}, #tau_{3prong}) low Nch - low HF " + tag[i]).c_str(), deltaphi_bins, 0, TMath::Pi());
     D_lowNch_lowHF[i]->SetXTitle("#Delta#phi(#tau_{#mu}, #tau_{3prong}) low Nch - low HF"); D_lowNch_lowHF[i]->Sumw2();
     D_lowNch_lowHF[i]->SetLineColor(colors[i]); D_lowNch_lowHF[i]->SetMarkerStyle(styles[i]);
+    
+    
+    A_tau_mu_pt[i] = new TH1F(("A_tau_mu_pt_" + tag[i]).c_str(),("visible #tau_{#mu} p_{T} " + tag[i]).c_str(),nbins_muPt, xbins_muPt);
+    A_tau_mu_pt[i]->SetXTitle("visible #tau_{#mu} p_{T} [GeV]"); A_tau_mu_pt[i]->Sumw2();
+    /*if (i != 0) {*/A_tau_mu_pt[i]->SetLineColor(colors[i]); A_tau_mu_pt[i]->SetMarkerStyle(styles[i]);
+    A_tau_mu_pt[i]->SetBinErrorOption(TH1::kPoisson);
+    
+    B_tau_mu_pt[i] = new TH1F(("B_tau_mu_pt_" + tag[i]).c_str(),("visible #tau_{#mu} p_{T} " + tag[i]).c_str(),nbins_muPt, xbins_muPt);
+    B_tau_mu_pt[i]->SetXTitle("visible #tau_{#mu} p_{T} [GeV]"); B_tau_mu_pt[i]->Sumw2();
+    /*if (i != 0) {*/B_tau_mu_pt[i]->SetLineColor(colors[i]); B_tau_mu_pt[i]->SetMarkerStyle(styles[i]);
+    B_tau_mu_pt[i]->SetBinErrorOption(TH1::kPoisson);
+    
+    C_tau_mu_pt[i] = new TH1F(("C_tau_mu_pt_" + tag[i]).c_str(),("visible #tau_{#mu} p_{T} " + tag[i]).c_str(),nbins_muPt, xbins_muPt);
+    C_tau_mu_pt[i]->SetXTitle("visible #tau_{#mu} p_{T} [GeV]"); C_tau_mu_pt[i]->Sumw2();
+    /*if (i != 0) {*/C_tau_mu_pt[i]->SetLineColor(colors[i]); C_tau_mu_pt[i]->SetMarkerStyle(styles[i]);
+    C_tau_mu_pt[i]->SetBinErrorOption(TH1::kPoisson);
+    
+    D_tau_mu_pt[i] = new TH1F(("D_tau_mu_pt_" + tag[i]).c_str(),("visible #tau_{#mu} p_{T} " + tag[i]).c_str(),nbins_muPt, xbins_muPt);
+    D_tau_mu_pt[i]->SetXTitle("visible #tau_{#mu} p_{T} [GeV]"); D_tau_mu_pt[i]->Sumw2();
+    /*if (i != 0) {*/D_tau_mu_pt[i]->SetLineColor(colors[i]); D_tau_mu_pt[i]->SetMarkerStyle(styles[i]);
+    D_tau_mu_pt[i]->SetBinErrorOption(TH1::kPoisson);
     
     h_pion_leading_pt[i] = new TH1F(("h_pion_leading_pt_" + tag[i]).c_str(),("leading pion pt " + tag[i]).c_str(),10, 0, 10*pionLeadingCut);
     h_pion_leading_pt[i]->SetXTitle("leading pion pt [GeV]"); h_pion_leading_pt[i]->Sumw2();
@@ -778,7 +936,7 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
     h_recoPiZeroDeltaM[i]->SetXTitle("reco #pi^{0} mass - 134.98 (MeV)"); h_recoPiZeroDeltaM[i]->Sumw2();
     /*if (i != 0) {*/h_recoPiZeroDeltaM[i]->SetLineColor(colors[i]); h_recoPiZeroDeltaM[i]->SetMarkerStyle(styles[i]);
     
-    h_NrecoPiZero[i] = new TH1F(("h_NrecoPiZero_" + tag[i]).c_str(),("number of reco PiZero candidates " + tag[i]).c_str(),20, -0.5, 19.5);
+    h_NrecoPiZero[i] = new TH1F(("h_NrecoPiZero_" + tag[i]).c_str(),("number of reco PiZero candidates " + tag[i]).c_str(),19, -0.5, 18.5);
     h_NrecoPiZero[i]->SetXTitle("number of reco PiZeros"); h_NrecoPiZero[i]->Sumw2();
     /*if (i != 0) {*/h_NrecoPiZero[i]->SetLineColor(colors[i]); h_NrecoPiZero[i]->SetMarkerStyle(styles[i]);
     
@@ -841,7 +999,7 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
     h_genPiZeroDeltaM[i]->SetXTitle("gen #pi^{0} mass - 134.98 (MeV)"); h_genPiZeroDeltaM[i]->Sumw2();
     /*if (i != 0) {*/h_genPiZeroDeltaM[i]->SetLineColor(colors[i]); h_genPiZeroDeltaM[i]->SetMarkerStyle(styles[i]);
     
-    h_NgenPiZero[i] = new TH1F(("h_NgenPiZero_" + tag[i]).c_str(),("number of gen PiZero candidates " + tag[i]).c_str(),20, -0.5, 19.5);
+    h_NgenPiZero[i] = new TH1F(("h_NgenPiZero_" + tag[i]).c_str(),("number of gen PiZero candidates " + tag[i]).c_str(),19, -0.5, 18.5);
     h_NgenPiZero[i]->SetXTitle("number of gen PiZeros"); h_NgenPiZero[i]->Sumw2();
     /*if (i != 0) {*/h_NgenPiZero[i]->SetLineColor(colors[i]); h_NgenPiZero[i]->SetMarkerStyle(styles[i]);
     
@@ -997,7 +1155,7 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
     /*if (i != 0) {*/h_tau_mu_dz[i]->SetLineColor(colors[i]); h_tau_mu_dz[i]->SetMarkerStyle(styles[i]);
     h_tau_mu_dz[i]->SetBinErrorOption(TH1::kPoisson);
     
-    h_tau_mu_pt[i] = new TH1F(("h_tau_mu_pt_" + tag[i]).c_str(),("visible #tau_{#mu} p_{T} " + tag[i]).c_str(),20, -0.5, 19.5);
+    h_tau_mu_pt[i] = new TH1F(("h_tau_mu_pt_" + tag[i]).c_str(),("visible #tau_{#mu} p_{T} " + tag[i]).c_str(),nbins_muPt, xbins_muPt);
     h_tau_mu_pt[i]->SetXTitle("visible #tau_{#mu} p_{T} [GeV]"); h_tau_mu_pt[i]->Sumw2();
     /*if (i != 0) {*/h_tau_mu_pt[i]->SetLineColor(colors[i]); h_tau_mu_pt[i]->SetMarkerStyle(styles[i]);
     h_tau_mu_pt[i]->SetBinErrorOption(TH1::kPoisson);
@@ -1376,6 +1534,26 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
     D_lowNch_lowHF[i] = new TH1F(("D_lowNch_lowHF_" + to_string(i)).c_str(),("#Delta#phi(#tau_{#mu}, #tau_{3prong}) low Nch - low HF " + to_string(i)).c_str(), deltaphi_bins, 0, TMath::Pi());
     D_lowNch_lowHF[i]->SetXTitle("#Delta#phi(#tau_{#mu}, #tau_{3prong}) low Nch - low HF"); D_lowNch_lowHF[i]->Sumw2();
     D_lowNch_lowHF[i]->SetLineColor(colors[i]); D_lowNch_lowHF[i]->SetMarkerStyle(styles[i]);
+    
+    A_tau_mu_pt[i] = new TH1F(("A_tau_mu_pt_" + to_string(i)).c_str(),("visible #tau_{#mu} p_{T} " + to_string(i)).c_str(),nbins_muPt, xbins_muPt);
+    A_tau_mu_pt[i]->SetXTitle("visible #tau_{#mu} p_{T} [GeV]"); A_tau_mu_pt[i]->Sumw2();
+    /*if (i != 0) {*/A_tau_mu_pt[i]->SetLineColor(colors[i]); A_tau_mu_pt[i]->SetMarkerStyle(styles[i]);
+    A_tau_mu_pt[i]->SetBinErrorOption(TH1::kPoisson);
+    
+    B_tau_mu_pt[i] = new TH1F((ABCDmuPtsysNames[i-nSamples]).c_str(),("visible #tau_{#mu} p_{T} " + to_string(i)).c_str(),nbins_muPt, xbins_muPt);
+    B_tau_mu_pt[i]->SetXTitle("visible #tau_{#mu} p_{T} [GeV]"); B_tau_mu_pt[i]->Sumw2();
+    /*if (i != 0) {*/B_tau_mu_pt[i]->SetLineColor(colors[i]); B_tau_mu_pt[i]->SetMarkerStyle(styles[i]);
+    B_tau_mu_pt[i]->SetBinErrorOption(TH1::kPoisson);
+    
+    C_tau_mu_pt[i] = new TH1F(("C_tau_mu_pt_" + to_string(i)).c_str(),("visible #tau_{#mu} p_{T} " + to_string(i)).c_str(),nbins_muPt, xbins_muPt);
+    C_tau_mu_pt[i]->SetXTitle("visible #tau_{#mu} p_{T} [GeV]"); C_tau_mu_pt[i]->Sumw2();
+    /*if (i != 0) {*/C_tau_mu_pt[i]->SetLineColor(colors[i]); C_tau_mu_pt[i]->SetMarkerStyle(styles[i]);
+    C_tau_mu_pt[i]->SetBinErrorOption(TH1::kPoisson);
+    
+    D_tau_mu_pt[i] = new TH1F(("D_tau_mu_pt_" + to_string(i)).c_str(),("visible #tau_{#mu} p_{T} " + to_string(i)).c_str(),nbins_muPt, xbins_muPt);
+    D_tau_mu_pt[i]->SetXTitle("visible #tau_{#mu} p_{T} [GeV]"); D_tau_mu_pt[i]->Sumw2();
+    /*if (i != 0) {*/D_tau_mu_pt[i]->SetLineColor(colors[i]); D_tau_mu_pt[i]->SetMarkerStyle(styles[i]);
+    D_tau_mu_pt[i]->SetBinErrorOption(TH1::kPoisson);
   
   }
   
@@ -1484,6 +1662,7 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
     //if (TREE->BsTauTau_mu1_pt->at(0) < 2.5) continue; // fix me
     //if (TREE->BsTauTau_nch->at(0) > 8) continue; // fix me
     
+    srand(time(0));
     TLorentzVector tau_hadron_pi1, tau_hadron_pi2, tau_hadron_pi3;
     
     bool triggered = TREE->triggered->at(0);
@@ -1500,6 +1679,9 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
     bool passedcalo = true;
     bool passedcaloDown = true;
     bool passedcaloUp = true;
+    bool highHFCR = false;
+    bool highHFCRDown = false;
+    bool highHFCRUp = false;
     bool passedZDC = true;
     bool passedMET = true;
     bool passedGamma = true;
@@ -1528,6 +1710,7 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
     double temp_pv_trk_2 = 0.;
     double temp_pv_trk_3 = 0.;
     for (int i=0; i<(int)TREE->BsTauTau_mu1_pt->size(); i++) {
+      if( (TREE->BsTauTau_mu1_pt->at(i) < barrel_mu_pt_cut && TMath::Abs(TREE->BsTauTau_mu1_eta->at(i)) < 1.2) || (TREE->BsTauTau_mu1_pt->at(i) < endcap_mu_pt_cut && TMath::Abs(TREE->BsTauTau_mu1_eta->at(i)) > 1.2))  continue;
       if (tau_muon_isSoft){
         if (!TREE->BsTauTau_mu1_isSoft->at(i)) continue;
       }
@@ -1537,9 +1720,7 @@ void main3prong(const int nSamples = 2, string files[] = inputFiles){
       if (tau_muon_isTracker){
         if (!TREE->BsTauTau_mu1_isTracker->at(i)) continue;
       }
-if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at(i)) < 1.2) || (TREE->BsTauTau_mu1_pt->at(i) < 2.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at(i)) > 1.2))  continue;
-      //if (TREE->BsTauTau_mu1_pt->at(i) < 3.5) { continue; }
-      if (TREE->BsTauTau_mu1_pt->at(i) > 2.5) passedmu = true;
+      passedmu = true;
       if (TREE->BsTauTau_mu1_pt->at(i) > temp_tau_pt_comparison){// && (TREE->BsTauTau_nch->at(0) > 3 || TREE->BsTauTau_tau_q->at(0)*TREE->BsTauTau_mu1_q->at(i) == -1)) {
         temp_tau_pt_comparison = TREE->BsTauTau_mu1_pt->at(i);
         tau_muon.SetPtEtaPhiM (TREE->BsTauTau_mu1_pt->at(i), TREE->BsTauTau_mu1_eta->at(i), TREE->BsTauTau_mu1_phi->at(i), muon_mass);
@@ -1560,6 +1741,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     float vprob = -1;
     float temp_pt = 0;
     double temp_tau_rho1 = 0.; double temp_tau_rho2 = 0.;
+    if (TREE->BsTauTau_tau_pt->size() > nCandMax) continue;
     for (int i=0; i<(int)TREE->BsTauTau_tau_pt->size(); i++) {
       if (TREE->cand_leadingPionPt->at(i) > pionLeadingCut && TREE->cand_subleadingPionPt->at(i) > pionSubLeadingCut && TREE->cand_subsubleadingPionPt->at(i) > pionSubSubLeadingCut){
         candCounter++;
@@ -1568,7 +1750,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
       }
       else continue;
       if (muon_charge*TREE->BsTauTau_tau_q->at(i) != MuTauCharge) continue;
-      if (TREE->BsTauTau_tau_pt->at(i) < 2) continue;
+      if (TREE->BsTauTau_tau_pt->at(i) < tau_hadron_pt_cut) continue;
       //if (temp_nch != 1 && TREE->BsTauTau_tau_pt->at(i) < 3.0) continue; //temporary commented
       //if(TMath::Abs(TREE->BsTauTau_tau_eta->at(i)) > 2) continue;
       if (TREE->BsTauTau_tau_pt->at(i) > temp_pt) {
@@ -1696,10 +1878,31 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
           if (passedNch) h_calo_HF_energy_eta[0]->Fill(etaCal,eHFm);
         }
       }
+      
+      
+    
+      float temp_HFmLeading_high = HFmLeading_high;
+      float temp_HFpLeading_high = HFpLeading_high;
+      
+  //#ifdef ZDCActive
+  //#else
+    if (hasZDCinfo){
+      if (sumZDCm > maxZDCm) temp_HFmLeading_high = HFmLeading_high_ZDCm;
+      if (sumZDCp > maxZDCp) temp_HFpLeading_high = HFpLeading_high_ZDCp;
+    }
+  //#endif
+      
+      
       averageHFeta /= (sumHFp+sumHFm);
-      if (maxHFp > HFpLeading_high || maxHFm > HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcalo = false;
-      if (maxHFp > 0.9*HFpLeading_high || maxHFm > 0.9*HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcaloDown = false;
-      if (maxHFp > 1.1*HFpLeading_high || maxHFm > 1.1*HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcaloUp = false;
+    if (maxHFp > temp_HFpLeading_high || maxHFm > temp_HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcalo = false;
+    if (maxHFp > 0.9*temp_HFpLeading_high || maxHFm > 0.9*temp_HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcaloDown = false;
+    if (maxHFp > 1.1*temp_HFpLeading_high || maxHFm > 1.1*temp_HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcaloUp = false;
+    
+    if (maxHFp > highHFp || maxHFm > highHFm) highHFCR = true;
+    if (maxHFp > 0.9*highHFp || maxHFm > 0.9*highHFm) highHFCRDown = true;
+    if (maxHFp > 1.1*highHFp || maxHFm > 1.1*highHFm) highHFCRUp = true;
+    
+    
       if (passedcalo && passedNch) h_calo_sumE[0]->Fill(sumE);
       if (passedcalo && passedNch) h_calo_leadingE[0]->Fill(leadingE);
       if (passedNch) h_calo_leadingE_eta[0]->Fill(leadingE_Eta,leadingE);
@@ -1712,10 +1915,10 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
       if (passedcalo && passedNch) h_calo_energyHF_pm[0]->Fill(sumHFm,sumHFp);
       if (passedcalo && passedNch) h_calo_energyHFp_size[0]->Fill(sizeHFp);
       if (passedcalo && passedNch) h_calo_energyHFm_size[0]->Fill(sizeHFm);
-      if (passedNch && maxHFm < HFmLeading_high && maxHFm > HFmLeading_low) h_calo_leadingHFp[0]->Fill(maxHFp);
-      if (passedNch && maxHFp < HFpLeading_high && maxHFp > HFpLeading_low) h_calo_leadingHFm[0]->Fill(maxHFm);
-      if (temp_nch>=5 && temp_nch<=8 && maxHFm < HFmLeading_high && maxHFm > HFmLeading_low) h_calo_leadingHFp_highNch[0]->Fill(maxHFp);
-      if (temp_nch>=5 && temp_nch<=8 && maxHFp < HFpLeading_high && maxHFp > HFpLeading_low) h_calo_leadingHFm_highNch[0]->Fill(maxHFm);
+      if (passedNch && maxHFm < temp_HFmLeading_high && maxHFm > HFmLeading_low) h_calo_leadingHFp[0]->Fill(maxHFp);
+      if (passedNch && maxHFp < temp_HFpLeading_high && maxHFp > HFpLeading_low) h_calo_leadingHFm[0]->Fill(maxHFm);
+      if (temp_nch>=5 && temp_nch<=8 && maxHFm < temp_HFmLeading_high && maxHFm > HFmLeading_low) h_calo_leadingHFp_highNch[0]->Fill(maxHFp);
+      if (temp_nch>=5 && temp_nch<=8 && maxHFp < temp_HFpLeading_high && maxHFp > HFpLeading_low) h_calo_leadingHFm_highNch[0]->Fill(maxHFm);
       if (passedNch) h_calo_leadingHF_pm[0]->Fill(maxHFm,maxHFp);
       //if (sumHFp < 95 || sumHFp > 160 || sumHFm < 95 || sumHFm > 160) passedcalo = false;
     }
@@ -1786,9 +1989,9 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     if (passedcalo && passedtau && passedNch) h_cutflow[0]->Fill(6); //HF and tau hadron and nch
     //if () h_cutflow[0]->Fill(4); //vertex prob
     
-    if (temp_nch >= 5 && temp_nch <= 8 && !passedcalo) category = nSamples;
-    if (passedNch && !passedcalo) category = nSamples+1;
-    if (temp_nch >= 5 && temp_nch <= 8 && passedcalo) category = nSamples+2;
+    if (temp_nch >= firstNchCategory && temp_nch <= firstNchCategory+nNchCategories-1 && highHFCR) category = nSamples;
+    if (passedNch && highHFCR) category = nSamples+1;
+    if (temp_nch >= firstNchCategory && temp_nch <= firstNchCategory+nNchCategories-1 && passedcalo) category = nSamples+2;
     if (passedNch && passedcalo) category = 0;
     
     bool keepEvent = false;
@@ -1801,7 +2004,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
       h_tau_hadron_vprob[category]->Fill(vprob);
     }
     if (!passedtau) keepEvent = false;
-    if (keepEvent && category == 0){
+    if (keepEvent && passedtau && category == 0 && passedZDC && delta_phi >= deltaPhi_cut){
       charge_counter[0][muon_charge*tauh_charge + 1] += 1;
     }
     if (muon_charge*tauh_charge == 0) keepEvent = false;
@@ -1918,27 +2121,57 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     } //if (keepEvent)
     
     if (passedmu && triggered && passedtau && muon_charge*tauh_charge == -1){// && delta_phi >= deltaPhi_cut){
-      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && !passedcalo) A_highNch_highHF[0]->Fill(delta_phi);
-      if (temp_nch == 3 && passedNch && !passedcalo) B_lowNch_highHF[0]->Fill(delta_phi);
+      
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCR) A_highNch_highHF[0]->Fill(delta_phi);
+      if (temp_nch == 3 && passedNch && highHFCR) B_lowNch_highHF[0]->Fill(delta_phi);
       if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcalo) C_highNch_lowHF[0]->Fill(delta_phi);
       if (temp_nch == 3 && passedNch && passedcalo) D_lowNch_lowHF[0]->Fill(delta_phi);
       
-      if (temp_nch >= 5 && temp_nch < firstNchCategory+nNchCategories && !passedcaloDown) A_highNch_highHF[nSamples]->Fill(delta_phi);
-      if (temp_nch == 3 && passedNch && !passedcaloDown) B_lowNch_highHF[nSamples]->Fill(delta_phi);
+      // deltaphi ABCD systematics
+      
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCRDown) A_highNch_highHF[nSamples]->Fill(delta_phi);
+      if (temp_nch == 3 && passedNch && highHFCRDown) B_lowNch_highHF[nSamples]->Fill(delta_phi);
       if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcaloDown) C_highNch_lowHF[nSamples]->Fill(delta_phi);
       if (temp_nch == 3 && passedNch && passedcaloDown) D_lowNch_lowHF[nSamples]->Fill(delta_phi);
       
-      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && !passedcaloUp) A_highNch_highHF[nSamples+1]->Fill(delta_phi);
-      if (temp_nch == 3 && passedNch && !passedcaloUp) B_lowNch_highHF[nSamples+1]->Fill(delta_phi);
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCRUp) A_highNch_highHF[nSamples+1]->Fill(delta_phi);
+      if (temp_nch == 3 && passedNch && highHFCRUp) B_lowNch_highHF[nSamples+1]->Fill(delta_phi);
       if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcaloUp) C_highNch_lowHF[nSamples+1]->Fill(delta_phi);
       if (temp_nch == 3 && passedNch && passedcaloUp) D_lowNch_lowHF[nSamples+1]->Fill(delta_phi);
       
       for (int cat = 0; cat < nNchCategories; cat++){      
-        if (temp_nch == firstNchCategory+cat && !passedcalo) A_highNch_highHF[nSamples+2+cat]->Fill(delta_phi);
-        if (temp_nch == 3 && passedNch && !passedcalo) B_lowNch_highHF[nSamples+2+cat]->Fill(delta_phi);
+        if (temp_nch == firstNchCategory+cat && highHFCR) A_highNch_highHF[nSamples+2+cat]->Fill(delta_phi);
+        if (temp_nch == 3 && passedNch && highHFCR) B_lowNch_highHF[nSamples+2+cat]->Fill(delta_phi);
         if (temp_nch == firstNchCategory+cat && passedcalo) C_highNch_lowHF[nSamples+2+cat]->Fill(delta_phi);
         if (temp_nch == 3 && passedNch && passedcalo) D_lowNch_lowHF[nSamples+2+cat]->Fill(delta_phi);
       }
+      
+      
+      
+      // muon pt ABCD systematics
+      if (delta_phi >= deltaPhi_cut){
+        if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCR) A_tau_mu_pt[0]->Fill(tau_muon.Pt());
+        if (temp_nch == 3 && passedNch && highHFCR) B_tau_mu_pt[0]->Fill(tau_muon.Pt());
+        if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcalo) C_tau_mu_pt[0]->Fill(tau_muon.Pt());
+        if (temp_nch == 3 && passedNch && passedcalo) D_tau_mu_pt[0]->Fill(tau_muon.Pt());
+        
+        if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCRDown) A_tau_mu_pt[nSamples]->Fill(tau_muon.Pt());
+        if (temp_nch == 3 && passedNch && highHFCRDown) B_tau_mu_pt[nSamples]->Fill(tau_muon.Pt());
+        if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcaloDown) C_tau_mu_pt[nSamples]->Fill(tau_muon.Pt());
+        if (temp_nch == 3 && passedNch && passedcaloDown) D_tau_mu_pt[nSamples]->Fill(tau_muon.Pt());
+        
+        if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCRUp) A_tau_mu_pt[nSamples+1]->Fill(tau_muon.Pt());
+        if (temp_nch == 3 && passedNch && highHFCRUp) B_tau_mu_pt[nSamples+1]->Fill(tau_muon.Pt());
+        if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcaloUp) C_tau_mu_pt[nSamples+1]->Fill(tau_muon.Pt());
+        if (temp_nch == 3 && passedNch && passedcaloUp) D_tau_mu_pt[nSamples+1]->Fill(tau_muon.Pt());
+        
+        for (int cat = 0; cat < nNchCategories; cat++){      
+          if (temp_nch == firstNchCategory+cat && highHFCR) A_tau_mu_pt[nSamples+2+cat]->Fill(tau_muon.Pt());
+          if (temp_nch == 3 && passedNch && highHFCR) B_tau_mu_pt[nSamples+2+cat]->Fill(tau_muon.Pt());
+          if (temp_nch == firstNchCategory+cat && passedcalo) C_tau_mu_pt[nSamples+2+cat]->Fill(tau_muon.Pt());
+          if (temp_nch == 3 && passedNch && passedcalo) D_tau_mu_pt[nSamples+2+cat]->Fill(tau_muon.Pt());
+        }
+      } //if (delta_phi >= deltaPhi_cut)
       
       
       // ABCD validation
@@ -2007,7 +2240,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   // MC STARTS HERE
   // *********************************************************
   // *********************************************************
-  
+  /*
   //Pion SF table:
   float pt_bins[14] = {0, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1};
   float pion_SF_hist_bins[15] = {0, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1, 5};
@@ -2061,7 +2294,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
       h_tauSFdown[ebin][pbin] = new TH1F(("pionSF_pt"+to_string(int(10*pt_bins[pbin]))+"_eta"+to_string(int(10*eta_bins[ebin]))+"Down").c_str(),("pionSF_pt"+to_string(int(10*pt_bins[pbin]))+"_eta"+to_string(int(10*eta_bins[ebin]))+"Down").c_str(),deltaphi_bins, 0, TMath::Pi());
       h_tauSFup[ebin][pbin]->Sumw2(); h_tauSFdown[ebin][pbin]->Sumw2();
     }
-  }
+  }*/
   
   int entriesMC;
   //TLorentzVector tau_muon_mc, tau_hadron_mc;
@@ -2069,6 +2302,11 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   bool passedmu  = false;
   bool passedtau = false;
   bool passedcalo = true;
+  bool passedcaloDown = true;
+  bool passedcaloUp = true;
+  bool highHFCR = false;
+  bool highHFCRDown = false;
+  bool highHFCRUp = false;
   bool passedGamma = true;
   double temp_tau_pt_comparison = 0.;
   int temp_nch = 0.;
@@ -2081,7 +2319,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   float acceptedRecoSquare = 0;
   bool matchedTauHad = false;
   int nMu3prong = 0;
-  float gen_muon_pt_cut = 2.5;
+  float gen_muon_pt_cut = endcap_mu_pt_cut;
   
   for (int s = 0; s < nSamples-1; s++){
   cout << "Starting " << tag[s+1] << endl;
@@ -2095,6 +2333,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     (TREEMCs[s]->fChain)->GetEntry(iEntry);
     
     if (!(iEntry%(entriesMC/20))) cout << "\r" << int(100*iEntry/entriesMC) << "%" << flush;
+    srand(time(0));
     //cout << "number of taus: " << (int)TREEMCs[s]->gen_tau_pt->size() << endl;
     //if (TREEMCs[s]->gen_tautau_to_mu3prong->at(0) == 0) continue;
     bool gen_tautau_to_mu3prong = TREEMCs[s]->gen_tautau_to_mu3prong->at(0);
@@ -2113,6 +2352,11 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     passedmu  = false;
     passedtau = false;
     passedcalo = true;
+    passedcaloDown = true;
+    passedcaloUp = true;
+    highHFCR = false;
+    highHFCRDown = false;
+    highHFCRUp = false;
     bool passedMET = true;
     passedNch = false;
     temp_tau_pt_comparison = 0.;
@@ -2144,6 +2388,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     pionSubSubLeadingPt = -1;
     
     for (int i=0; i<(int)TREEMCs[s]->BsTauTau_mu1_pt->size(); i++) {
+      if( (TREEMCs[s]->BsTauTau_mu1_pt->at(i) < barrel_mu_pt_cut && TMath::Abs(TREEMCs[s]->BsTauTau_mu1_eta->at(i)) < 1.2) || (TREEMCs[s]->BsTauTau_mu1_pt->at(i) < endcap_mu_pt_cut && TMath::Abs(TREEMCs[s]->BsTauTau_mu1_eta->at(i)) > 1.2))  continue;
       if (tau_muon_isSoft){
         if (!TREEMCs[s]->BsTauTau_mu1_isSoft->at(i)) continue;
       }
@@ -2153,9 +2398,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
       if (tau_muon_isTracker){
         if (!TREEMCs[s]->BsTauTau_mu1_isTracker->at(i)) continue;
       }
-      if( (TREEMCs[s]->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREEMCs[s]->BsTauTau_mu1_eta->at(i)) < 1.2) || (TREEMCs[s]->BsTauTau_mu1_pt->at(i) < 2.5 && TMath::Abs(TREEMCs[s]->BsTauTau_mu1_eta->at(i)) > 1.2))  continue;
-      //if (TREEMCs[s]->BsTauTau_mu1_pt->at(i) < 3.5) { continue; }
-      if (TREEMCs[s]->BsTauTau_mu1_pt->at(i) > 2.5) passedmu = true;
+      passedmu = true;
       if (TREEMCs[s]->BsTauTau_mu1_pt->at(i) > temp_tau_pt_comparison) {
         temp_tau_pt_comparison = TREEMCs[s]->BsTauTau_mu1_pt->at(i);
         tau_muon.SetPtEtaPhiM (TREEMCs[s]->BsTauTau_mu1_pt->at(i), TREEMCs[s]->BsTauTau_mu1_eta->at(i), TREEMCs[s]->BsTauTau_mu1_phi->at(i), muon_mass);
@@ -2168,7 +2411,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     if (temp_nch>=min_nch && temp_nch<=max_nch) passedNch = true;
     
     if (!TREEMCs[s]->BsTauTau_bbPV_vz->empty()) temp_pvz = TREEMCs[s]->BsTauTau_bbPV_vz->at(0);
-    temp_npv = TREEMCs[s]->PV_N;
+    temp_npv = 10;//TREEMCs[s]->PV_N; //fix me
     h_tau_hadron_nPions[s+1]->Fill(TREEMCs[s]->BsTauTau_nPions->at(0));
     
     /*
@@ -2220,9 +2463,9 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     
     temp_tau_pt_comparison = 0.;
     tauh_charge = 0;
-    float muon_weight_trg = tnp_weight_trg_pbpb_upc(tau_muon.Pt(),tau_muon.Eta(),0);
-    float muon_weight_trk = tnp_weight_trk_pbpb(0);
-    muon_weight = muon_weight_trg*muon_weight_trk;
+    float muon_weight_trg = tnp_weight_trigger_upc_pbpb(tau_muon.Pt(),tau_muon.Eta(),0);
+    float muon_weight_soft = tnp_weight_softid_upc_pbpb(tau_muon.Pt(),tau_muon.Eta(),0);
+    muon_weight = muon_weight_trg*muon_weight_soft;
     muon_weight_error = 0;
     candCounter = 0;
     int chosenTauIndex = -1;
@@ -2231,6 +2474,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     //if(!TREEMCs[s]->BsTauTau_tau_pt) continue;
     float vprob = -1;
     float temp_pt = 0;
+    if (TREEMCs[s]->BsTauTau_tau_pt->size() > nCandMax) continue;
     for (int i=0; i<(int)TREEMCs[s]->BsTauTau_tau_pt->size(); i++) {
       if (TREEMCs[s]->cand_leadingPionPt->at(i) > pionLeadingCut && TREEMCs[s]->cand_subleadingPionPt->at(i) > pionSubLeadingCut && TREEMCs[s]->cand_subsubleadingPionPt->at(i) > pionSubSubLeadingCut){
         candCounter++;
@@ -2239,7 +2483,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
       }
       else continue;
       if (muon_charge*TREEMCs[s]->BsTauTau_tau_q->at(i) != MuTauCharge) continue;
-      if (TREEMCs[s]->BsTauTau_tau_pt->at(i) < 2) continue;
+      if (TREEMCs[s]->BsTauTau_tau_pt->at(i) < tau_hadron_pt_cut) continue;
       //if (temp_nch != 1 && TREEMCs[s]->BsTauTau_tau_pt->at(i) < 2.0) continue;
       //if(TMath::Abs(TREEMCs[s]->BsTauTau_tau_eta->at(i)) > 2) continue;
       if (TREEMCs[s]->BsTauTau_tau_pt->at(i) > temp_pt) {
@@ -2274,11 +2518,11 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     bool passedDitau = (tau_muon+tau_hadron).M() > ditauMassCut;
     
     // Applying pion SF and up/down variations
-    float tauSFup[3][14];
-    float tauSFdown[3][14];
-    float tauSF = 1;
-    float tauSFmean = 1; //should be equal to tauSF. This is a crosscheck
-    if (passedtau){
+    //float tauSFup[3][14];
+    //float tauSFdown[3][14];
+    float tauSF = 0.979*0.979*0.979; // three times for three pions
+    //float tauSFmean = 0.979; //should be equal to tauSF. This is a crosscheck
+    /*if (passedtau){
       int etaIndex[3] = {0,0,0};
       int ptIndex[3] = {0,0,0};
       for (int etabin = 0; etabin < 3; etabin++){
@@ -2315,7 +2559,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
           } // loop on pions
         } // loop on pt bins
       } // loop on eta bins
-    } // if passedtau
+    } // if passedtau*/
     
     
     
@@ -2398,7 +2642,23 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
           if (passedNch) h_calo_HF_energy_eta[s+1]->Fill(etaCal,eHFm);        }
       }
       averageHFeta /= (sumHFp+sumHFm);
-      if (maxHFp > HFpLeading_high || maxHFm > HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcalo = false;
+      
+      float temp_HFmLeading_high = HFmLeading_high;
+      float temp_HFpLeading_high = HFpLeading_high;
+      
+      if (((double)rand()) / RAND_MAX > 0.5*(1+ZDC_0n0n_eff)) temp_HFmLeading_high = HFmLeading_high_ZDCm;
+      if (((double)rand()) / RAND_MAX > 0.5*(1+ZDC_0n0n_eff)) temp_HFpLeading_high = HFpLeading_high_ZDCp;
+      
+      if (maxHFp > temp_HFpLeading_high || maxHFm > temp_HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcalo = false;
+      if (maxHFp > 0.9*temp_HFpLeading_high || maxHFm > 0.9*temp_HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcaloDown = false;
+      if (maxHFp > 1.1*temp_HFpLeading_high || maxHFm > 1.1*temp_HFmLeading_high || maxHFp < HFpLeading_low || maxHFm < HFmLeading_low) passedcaloUp = false;
+    
+    
+      if (maxHFp > highHFp || maxHFm > highHFm) highHFCR = true;
+      if (maxHFp > 0.9*highHFp || maxHFm > 0.9*highHFm) highHFCRDown = true;
+      if (maxHFp > 1.1*highHFp || maxHFm > 1.1*highHFm) highHFCRUp = true;
+      
+      
       if (passedcalo && passedNch) h_calo_sumE[s+1]->Fill(sumE);
       if (passedcalo && passedNch) h_calo_leadingE[s+1]->Fill(leadingE);
       if (passedNch) h_calo_leadingE_eta[s+1]->Fill(leadingE_Eta,leadingE);
@@ -2412,10 +2672,10 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
       //h_calo_energyHFp_nch->Fill(TREEMCs[s]->BsTauTau_nch->at(0),maxHFp); h_calo_energyHFm_nch->Fill(TREEMCs[s]->BsTauTau_nch->at(0),maxHFm,tauSF*muon_weight);
       if (passedcalo && passedNch) h_calo_energyHFp_size[s+1]->Fill(sizeHFp,tauSF*muon_weight);
       if (passedcalo && passedNch) h_calo_energyHFm_size[s+1]->Fill(sizeHFm,tauSF*muon_weight);
-      if (passedNch && maxHFm < HFmLeading_high && maxHFm > HFmLeading_low) h_calo_leadingHFp[s+1]->Fill(maxHFp,tauSF*muon_weight);
-      if (passedNch && maxHFm < HFmLeading_high && maxHFm > HFmLeading_low) h_calo_leadingHFm[s+1]->Fill(maxHFm,tauSF*muon_weight);
-      if (temp_nch>=5 && temp_nch<=8 && maxHFm < HFmLeading_high && maxHFm > HFmLeading_low) h_calo_leadingHFp_highNch[s+1]->Fill(maxHFp,tauSF*muon_weight);
-      if (temp_nch>=5 && temp_nch<=8 && maxHFp < HFpLeading_high && maxHFp > HFpLeading_low) h_calo_leadingHFm_highNch[s+1]->Fill(maxHFm,tauSF*muon_weight);
+      if (passedNch && maxHFm < temp_HFmLeading_high && maxHFm > HFmLeading_low) h_calo_leadingHFp[s+1]->Fill(maxHFp,tauSF*muon_weight);
+      if (passedNch && maxHFp < temp_HFpLeading_high && maxHFp > HFpLeading_low) h_calo_leadingHFm[s+1]->Fill(maxHFm,tauSF*muon_weight);
+      if (temp_nch>=5 && temp_nch<=8 && maxHFm < temp_HFmLeading_high && maxHFm > HFmLeading_low) h_calo_leadingHFp_highNch[s+1]->Fill(maxHFp,tauSF*muon_weight);
+      if (temp_nch>=5 && temp_nch<=8 && maxHFp < temp_HFpLeading_high && maxHFp > HFpLeading_low) h_calo_leadingHFm_highNch[s+1]->Fill(maxHFm,tauSF*muon_weight);
       if (passedNch) h_calo_leadingHF_pm[s+1]->Fill(maxHFm,maxHFp,tauSF*muon_weight);
       //if (sumHFp < 95 || sumHFp > 160 || sumHFm < 95 || sumHFm > 160) passedcalo = false;
     }
@@ -2644,51 +2904,84 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
       }
       
       
-      if (s==0 && passedNch && passedcalo){
+      if(delta_phi >= deltaPhi_cut){
+      
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCR) A_tau_mu_pt[s+1]->Fill(tau_muon.Pt(),tauSF*muon_weight);
+      if (temp_nch == 1 && passedNch  && highHFCR) B_tau_mu_pt[s+1]->Fill(tau_muon.Pt(),tauSF*muon_weight);
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcalo) C_tau_mu_pt[s+1]->Fill(tau_muon.Pt(),tauSF*muon_weight);
+      if (temp_nch == 1 && passedNch  && passedcalo) D_tau_mu_pt[s+1]->Fill(tau_muon.Pt(),tauSF*muon_weight);
+      
+      
+      
+#ifdef BSM      
+      if (s<(nSamples-n_atau-1)){
+        if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCR) A_tau_mu_pt[0]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+        if (temp_nch == 1 && passedNch && highHFCR) B_tau_mu_pt[0]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+        if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcalo) C_tau_mu_pt[0]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+        
+        if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCRDown) A_tau_mu_pt[nSamples]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+        if (temp_nch == 1 && passedNch && highHFCRDown) B_tau_mu_pt[nSamples]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+        if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcaloDown) C_tau_mu_pt[nSamples]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+        
+        if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCRUp) A_tau_mu_pt[nSamples+1]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+        if (temp_nch == 1 && passedNch && highHFCRUp) B_tau_mu_pt[nSamples+1]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+        if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcaloUp) C_tau_mu_pt[nSamples+1]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+        
+        for (int cat = 0; cat < nNchCategories; cat++){      
+          if (temp_nch == firstNchCategory+cat && highHFCR) A_tau_mu_pt[nSamples+2+cat]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+          if (temp_nch == 1 && passedNch && highHFCR) B_tau_mu_pt[nSamples+2+cat]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+          if (temp_nch == firstNchCategory+cat && passedcalo) C_tau_mu_pt[nSamples+2+cat]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+        }
+      }
+#else      
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCR) A_tau_mu_pt[0]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+      if (temp_nch == 1 && passedNch && highHFCR) B_tau_mu_pt[0]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcalo) C_tau_mu_pt[0]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+      
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCRDown) A_tau_mu_pt[nSamples]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+      if (temp_nch == 1 && passedNch && highHFCRDown) B_tau_mu_pt[nSamples]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcaloDown) C_tau_mu_pt[nSamples]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+      
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && highHFCRUp) A_tau_mu_pt[nSamples+1]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+      if (temp_nch == 1 && passedNch && highHFCRUp) B_tau_mu_pt[nSamples+1]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+      if (temp_nch >= firstNchCategory && temp_nch < firstNchCategory+nNchCategories && passedcaloUp) C_tau_mu_pt[nSamples+1]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+      
+      for (int cat = 0; cat < nNchCategories; cat++){      
+        if (temp_nch == firstNchCategory+cat && highHFCR) A_tau_mu_pt[nSamples+2+cat]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+        if (temp_nch == 1 && passedNch && highHFCR) B_tau_mu_pt[nSamples+2+cat]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+        if (temp_nch == firstNchCategory+cat && passedcalo) C_tau_mu_pt[nSamples+2+cat]->Fill(tau_muon.Pt(),-1*tauSF*muon_weight*SF[s+1]);
+      }
+#endif      
+      
+      } // if(delta_phi >= deltaPhi_cut)
+      
+      
+      
+      
+      
+      if (passedNch && passedcalo){
+        
+        // #### Muon SF statistical uncertainties ####
+        float muon_weight_stat_trigger = muon_weight_soft*max(abs(tnp_weight_trigger_upc_pbpb(tau_muon.Pt(),tau_muon.Eta(),1)-muon_weight_trg),abs(tnp_weight_trigger_upc_pbpb(tau_muon.Pt(),tau_muon.Eta(),2)-muon_weight_trg));
+        
+        float muon_weight_stat_soft = muon_weight_trg*max(abs(tnp_weight_softid_upc_pbpb(tau_muon.Pt(),tau_muon.Eta(),1)-muon_weight_soft),abs(tnp_weight_softid_upc_pbpb(tau_muon.Pt(),tau_muon.Eta(),2)-muon_weight_soft));
+        
         
         // #### Muon SF systematic uncertainties ####
-        float muon_weight_sys_trigger = muon_weight_trk*max(abs(tnp_weight_trg_pbpb_upc(tau_muon.Pt(),tau_muon.Eta(),-1)-muon_weight_trg),abs(tnp_weight_trg_pbpb_upc(tau_muon.Pt(),tau_muon.Eta(),-2)-muon_weight_trg));
+        float muon_weight_sys_trigger = muon_weight_soft*max(abs(tnp_weight_trigger_upc_pbpb(tau_muon.Pt(),tau_muon.Eta(),-1)-muon_weight_trg),abs(tnp_weight_trigger_upc_pbpb(tau_muon.Pt(),tau_muon.Eta(),-2)-muon_weight_trg));
         
-        float muon_weight_sys_tracking = muon_weight_trg*max(abs(tnp_weight_trk_pbpb(-1)-muon_weight_trk),abs(tnp_weight_trk_pbpb(-2)-muon_weight_trk));
+        float muon_weight_sys_soft = muon_weight_trg*max(abs(tnp_weight_softid_upc_pbpb(tau_muon.Pt(),tau_muon.Eta(),-1)-muon_weight_soft),abs(tnp_weight_softid_upc_pbpb(tau_muon.Pt(),tau_muon.Eta(),-2)-muon_weight_soft));
         
-        float muon_weight_sys_muid = muon_weight*max(abs(tnp_weight_muid_pbpb(tau_muon.Pt(),tau_muon.Eta(),-1)-1),abs(tnp_weight_muid_pbpb(tau_muon.Pt(),tau_muon.Eta(),-2)-1));
-        
-        float muon_weight_sys_sta = muon_weight*max(abs(tnp_weight_sta_pbpb(tau_muon.Pt(),tau_muon.Eta(),-1)-1),abs(tnp_weight_sta_pbpb(tau_muon.Pt(),tau_muon.Eta(),-2)-1));
-        
-        float muon_weight_sys_binned = tnp_weight_trg_pbpb_upc(tau_muon.Pt(),tau_muon.Eta(),-10)*muon_weight_trk-muon_weight;
-        
-        
-        // #### Muon SF statistical uncertainties (squared)####
-        int nToysTrigger = 100;
-        int nToys = 100;
-        float muon_weight_stat_trigger = 0; // squared
-        float muon_weight_stat_muid = 0; // squared
-        float muon_weight_stat_sta = 0; // squared
-        for (int toy = 1; toy <= nToys; toy++){
-          muon_weight_stat_muid += pow(tnp_weight_muid_pbpb(tau_muon.Pt(),tau_muon.Eta(),toy)-1,2);
-          muon_weight_stat_sta += pow(tnp_weight_sta_pbpb(tau_muon.Pt(),tau_muon.Eta(),toy)-1,2);
-        }
-        for (int toy = 1; toy <= nToysTrigger; toy++){
-          muon_weight_stat_trigger += pow(tnp_weight_trg_pbpb_upc(tau_muon.Pt(),tau_muon.Eta(),toy)-muon_weight_trg,2);
-          //if (abs(tnp_weight_trg_pbpb_upc(tau_muon.Pt(),tau_muon.Eta(),toy)-muon_weight_trg) > 0.4) cout << "SF: " << muon_weight_trg << " +- " << tnp_weight_trg_pbpb_upc(tau_muon.Pt(),tau_muon.Eta(),toy)-muon_weight_trg << " pt: " << tau_muon.Pt() << " eta: " << tau_muon.Eta() << endl;
-        }
-        muon_weight_stat_trigger *= muon_weight_trk*muon_weight_trk/nToysTrigger;
-        muon_weight_stat_muid *= muon_weight*muon_weight/nToys;
-        muon_weight_stat_sta *= muon_weight*muon_weight/nToys;
         
         
         // #### Adding up all Muon SF uncertainties ####
-        muon_weight_error = sqrt(pow(muon_weight_sys_trigger,2)+pow(muon_weight_sys_tracking,2)+pow(muon_weight_sys_muid,2)/*+pow(muon_weight_sys_sta,2)*/+pow(muon_weight_sys_binned,2)+muon_weight_stat_trigger+muon_weight_stat_muid/*+muon_weight_stat_sta*/);
+        muon_weight_error = sqrt(pow(muon_weight_stat_trigger,2)+pow(muon_weight_stat_soft,2)+pow(muon_weight_sys_trigger,2)+pow(muon_weight_sys_soft,2));
         
-        
-        //float muon_weight_stat = sqrt(muon_weight_stat_trigger+muon_weight_stat_muid+muon_weight_stat_sta);
-        //float muon_weight_sys = sqrt(pow(muon_weight_sys_trigger,2)+pow(muon_weight_sys_tracking,2)+pow(muon_weight_sys_muid,2)+pow(muon_weight_sys_sta,2)+pow(muon_weight_sys_binned,2));
-        //cout << "muon SF: " << muon_weight << " +- " << muon_weight_stat << "(stat) +- " << muon_weight_sys << "(sys)" << endl;
         
         h_deltaphi_tau_mu_tau_hadron[s+1]->Fill(delta_phi,tauSF*muon_weight);
         h_sys_muon_SF_Down->Fill(delta_phi,tauSF*(muon_weight-muon_weight_error));
         h_sys_muon_SF_Up->Fill(delta_phi,tauSF*(muon_weight+muon_weight_error));
-        
+        /*
         // #### 3prong tau SF systematic uncertainties ####
         for (int ebin = 0; ebin < 3; ebin++){
           for (int pbin = 0; pbin < 14; pbin++){
@@ -2697,15 +2990,11 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
           }
         }
         
-        tauSF = 1;
-        muon_weight = 1;
         
-        h_tauSFmean->Fill(delta_phi,tauSFmean*muon_weight);
+        h_tauSFmean->Fill(delta_phi,tauSFmean*muon_weight);*/
         
-      } // if(s==0) for muon and pion SF uncertainties
+      } // if(passedNch && passedcalo) for muon SF uncertainties
       
-        tauSF = 1;
-        muon_weight = 1;
       
       
       if(delta_phi < deltaPhi_cut && passedcalo) continue;
@@ -2736,6 +3025,16 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
       h_tau_mu_pz[s+1]->Fill(tau_muon.Pz(),tauSF*muon_weight);
       h_tau_mu_dz[s+1]->Fill(10*(TREEMCs[s]->BsTauTau_mu1_vz->at(0)-TREEMCs[s]->BsTauTau_PV_vz->at(0)),tauSF*muon_weight);
       h_tau_mu_pt[s+1]->Fill(tau_muon.Pt(),tauSF*muon_weight);
+      
+#ifdef BSM      
+      int iatau = s-(nSamples-n_atau-1);
+      if (iatau>=0){
+        h_signal_atau_sys_muon_pt_SF_Down[iatau]->Fill(tau_muon.Pt(),tauSF*(muon_weight-muon_weight_error));
+        h_signal_atau_sys_muon_pt_SF_Up[iatau]->Fill(tau_muon.Pt(),tauSF*(muon_weight+muon_weight_error));
+      }
+#endif
+      
+      
       if (s==0) h_muon_pt_before_SF->Fill(tau_muon.Pt(),tauSF);
       if (s==0) h_muon_pt_after_SF->Fill(tau_muon.Pt(),tauSF*muon_weight);
       h_tau_mu_eta[s+1]->Fill(tau_muon.Eta(),tauSF*muon_weight);
@@ -2814,7 +3113,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     
   } // loop on entries
   
-  cout << "\nMuon charge times hadronic tau charge for " << tag[s+1] << ":\n -1: " << charge_counter[s+1][0] << "\n  0: " << charge_counter[s+1][1] << "\n +1: " << charge_counter[s+1][2] << endl;
+  cout << "\nMuon charge times hadronic tau charge for " << tag[s+1] << ":\n -1: " << charge_counter[s+1][0] << " -> " << charge_counter[s+1][0]*SF[s+1] << "  (SF = " << SF[s+1] << ")\n  0: " << charge_counter[s+1][1] << "\n +1: " << charge_counter[s+1][2] << endl;
   } // loop on samples  
   
   
@@ -2930,10 +3229,24 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     A_highNch_highHF[i]->Scale(SF[i]);
     B_lowNch_highHF[i]->Scale(SF[i]);
     C_highNch_lowHF[i]->Scale(SF[i]);
-    D_lowNch_lowHF[i]->Scale(SF[i]);
+    D_lowNch_lowHF[i]->Scale(SF[i]);    
+    
+    A_tau_mu_pt[i]->Scale(SF[i]);
+    B_tau_mu_pt[i]->Scale(SF[i]);
+    C_tau_mu_pt[i]->Scale(SF[i]);
+    D_tau_mu_pt[i]->Scale(SF[i]);
+    
+    
+    
     //h_NrecoGamma[i]->Scale(SF[i]);
     
     h_nHitsPixel[i]->Scale(SF[i]);
+#ifdef BSM
+    if (i>=(nSamples-n_atau)){
+      h_signal_atau_sys_muon_pt_SF_Down[i+n_atau-nSamples]->Scale(SF[i]);
+      h_signal_atau_sys_muon_pt_SF_Up[i+n_atau-nSamples]->Scale(SF[i]);
+    }
+#endif
   }
   
   h_sys_muon_SF_Down->Scale(SF[1]);
@@ -2941,7 +3254,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   
   cout << "Signal: " << h_deltaphi_tau_mu_tau_hadron[1]->Integral() << " muon-SF down: " << h_sys_muon_SF_Down->Integral() << " muon-SF up: " << h_sys_muon_SF_Up->Integral() << " -> " << 100.0*(h_sys_muon_SF_Up->Integral()-h_sys_muon_SF_Down->Integral())/(2*h_deltaphi_tau_mu_tau_hadron[1]->Integral()) << " % variation" << endl;
   
-  cout << "\npion SF variations:\n";
+  /*cout << "\npion SF variations:\n";
   for (int ebin = 0; ebin < 3; ebin++){
     for (int pbin = 0; pbin < 14; pbin++){
       h_tauSFup[ebin][pbin]->Scale(SF[1]);
@@ -2949,7 +3262,7 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
       //cout << "pt: " << pt_bins[pbin] << " eta: " << eta_bins[ebin] << "\nSignal: " << h_deltaphi_tau_mu_tau_hadron[1]->Integral() << " tau-SF down: " << h_tauSFdown[ebin][pbin]->Integral() << " tau-SF up: " << h_tauSFup[ebin][pbin]->Integral() << " -> " << 100.0*(h_tauSFup[ebin][pbin]->Integral()-h_tauSFdown[ebin][pbin]->Integral())/(2*h_deltaphi_tau_mu_tau_hadron[1]->Integral()) << " % variation" << endl;
     }
   }
-  h_tauSFmean->Scale(SF[1]);
+  h_tauSFmean->Scale(SF[1]);*/
   
   
   int shift = 0;
@@ -2981,6 +3294,23 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   //background->SetMarkerStyle(kFullTriangleDown);
   background->SetLineWidth(3);
   background->SetLineColor(colors[nSamples]);
+  
+  
+  
+  TH1F *background_muon_pt = (TH1F*)B_tau_mu_pt[0]->Clone("ABCD-background-muon-pt");
+  background_muon_pt->SetTitle("Estimated background from ABCD;visible #tau_{#mu} p_{T} [GeV];background in the signal region");
+  background_muon_pt->Multiply(C_tau_mu_pt[0]);
+  background_muon_pt->Divide(A_tau_mu_pt[0]);
+  background_muon_pt->SetMarkerStyle(1);
+  //background_muon_pt->SetMarkerStyle(kFullTriangleDown);
+  background_muon_pt->SetLineWidth(3);
+  background_muon_pt->SetLineColor(colors[nSamples]);
+  
+  cout << endl << "uncontaminated CRs for muon pt:" << endl;
+  cout << "A: " << A_tau_mu_pt[0]->Integral() << endl;
+  cout << "B: " << B_tau_mu_pt[0]->Integral() << endl;
+  cout << "C: " << C_tau_mu_pt[0]->Integral() << endl;
+  cout << "ABCD background: " << background_muon_pt->Integral() << endl;
   
   
   // Cross section and errors
@@ -3065,9 +3395,13 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   int varHFup = 0;
   int varHFdown = 0;
   for (int variation = 0; variation < 2; variation++){
-    B_lowNch_highHF[nSamples+variation]->Multiply(C_highNch_lowHF[nSamples+variation]);
-    B_lowNch_highHF[nSamples+variation]->Divide(A_highNch_highHF[nSamples+variation]);
-    float var = B_lowNch_highHF[nSamples+variation]->Integral(maxSBbin, deltaphi_bins)-background->Integral(maxSBbin, deltaphi_bins);
+    //B_lowNch_highHF[nSamples+variation]->Multiply(C_highNch_lowHF[nSamples+variation]);
+    //B_lowNch_highHF[nSamples+variation]->Divide(A_highNch_highHF[nSamples+variation]);
+    //float var = B_lowNch_highHF[nSamples+variation]->Integral(maxSBbin, deltaphi_bins)-background->Integral(maxSBbin, deltaphi_bins);
+    B_tau_mu_pt[nSamples+variation]->Multiply(C_tau_mu_pt[nSamples+variation]);
+    B_tau_mu_pt[nSamples+variation]->Divide(A_tau_mu_pt[nSamples+variation]);
+    float var = B_tau_mu_pt[nSamples+variation]->Integral()-background_muon_pt->Integral();
+    cout << "\nvariation" << variation << ": " << B_tau_mu_pt[nSamples+variation]->Integral() << " - " << background_muon_pt->Integral() << endl;
     cout << var << " ";
     if (var > variation_up){
       variation_up = var;
@@ -3088,9 +3422,13 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   int varNchUp = 0;
   int varNchDown = 0;
   for (int variation = 2; variation < 2+nNchCategories; variation++){
-    B_lowNch_highHF[nSamples+variation]->Multiply(C_highNch_lowHF[nSamples+variation]);
-    B_lowNch_highHF[nSamples+variation]->Divide(A_highNch_highHF[nSamples+variation]);
-    float var = B_lowNch_highHF[nSamples+variation]->Integral(maxSBbin, deltaphi_bins)-background->Integral(maxSBbin, deltaphi_bins);
+    //B_lowNch_highHF[nSamples+variation]->Multiply(C_highNch_lowHF[nSamples+variation]);
+    //B_lowNch_highHF[nSamples+variation]->Divide(A_highNch_highHF[nSamples+variation]);
+    //float var = B_lowNch_highHF[nSamples+variation]->Integral(maxSBbin, deltaphi_bins)-background->Integral(maxSBbin, deltaphi_bins);
+    B_tau_mu_pt[nSamples+variation]->Multiply(C_tau_mu_pt[nSamples+variation]);
+    B_tau_mu_pt[nSamples+variation]->Divide(A_tau_mu_pt[nSamples+variation]);
+    float var = B_tau_mu_pt[nSamples+variation]->Integral()-background_muon_pt->Integral();
+    cout << "variation" << variation << ": " << B_tau_mu_pt[nSamples+variation]->Integral() << " - " << background_muon_pt->Integral() << endl;
     cout << var << " ";
     if (var > variation_up){
       variation_up = var;
@@ -3104,12 +3442,12 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   cout << "\nnch variation UP is " << variation_up << " with nch = " << varNchUp << endl;
   cout << "nch variation DOWN is " << variation_down << " with nch = " << varNchDown << endl << endl;
   
-  TH1F *background_sysNchDown = (TH1F*)B_lowNch_highHF[nSamples+2]->Clone("ABCD-sys-nchDown");
+  TH1F *background_sysNchDown = (TH1F*)B_tau_mu_pt[nSamples+3]->Clone("ABCD-muon-pt-sys-nchDown");
   background_sysNchDown->SetTitle("Highest variation from ABCD background from nch - Down");
   //background_sysDown->Multiply(C_highNch_lowHF[nSamples]);
   //background_sysDown->Divide(A_highNch_highHF[nSamples]);
   
-  TH1F *background_sysNchUp = (TH1F*)B_lowNch_highHF[nSamples+3]->Clone("ABCD-sys-nchUp");
+  TH1F *background_sysNchUp = (TH1F*)B_tau_mu_pt[nSamples+2]->Clone("ABCD-muon-pt-sys-nchUp");
   background_sysNchUp->SetTitle("Highest variation from ABCD background from nch - Up");
   //background_sysUp->Multiply(C_highNch_lowHF[nSamples+1]);
   //background_sysUp->Divide(A_highNch_highHF[nSamples+1]);
@@ -3164,7 +3502,11 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   tempGend->SetFillStyle(0);
   tempGend->SetFillColor(0); tempGend->SetLineColor(0); tempGend->SetShadowColor(0); tempGend->SetTextSize(0.03);
   tempGend->AddEntry(h_deltaphi_tau_mu_tau_hadron[0],    "Data", "ep");
+#ifdef BSM
+  for (int i = 1; i < (nSamples-n_atau); i++) tempGend->AddEntry(h_deltaphi_tau_mu_tau_hadron[i], (tags[i]).c_str(), "l");
+#else
   for (int i = 1; i < nSamples; i++) tempGend->AddEntry(h_deltaphi_tau_mu_tau_hadron[i], (tags[i]).c_str(), "l");
+#endif
   tempGend->AddEntry(background,    "ABCD background", "l");
   tempGend->Draw();
   
@@ -3181,7 +3523,11 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   legend->SetFillColor(0); legend->SetLineColor(0); legend->SetShadowColor(0); legend->SetTextSize(0.035);
   //legend->AddEntry(h_deltaphi_tau_mu_tau_hadron[0],    (tag[0]).c_str(), "ep");
   legend->AddEntry(h_deltaphi_tau_mu_tau_hadron[0],    "Data", "ep");
+#ifdef BSM
+  for (int i = 1; i < (nSamples-n_atau); i++) legend->AddEntry(h_deltaphi_tau_mu_tau_hadron[i], (tags[i]).c_str(), "l");
+#else
   for (int i = 1; i < nSamples; i++) legend->AddEntry(h_deltaphi_tau_mu_tau_hadron[i], (tags[i]).c_str(), "l");
+#endif
   legend->AddEntry(background,    "ABCD background", "l");
   //legend->Draw();
   //gStyle->SetErrorX(0.);
@@ -3190,7 +3536,11 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   nobackgend->SetFillStyle(0);
   nobackgend->SetFillColor(0); nobackgend->SetLineColor(0); nobackgend->SetShadowColor(0); nobackgend->SetTextSize(0.03);
   nobackgend->AddEntry(h_deltaphi_tau_mu_tau_hadron[0],    "Data", "ep");
+#ifdef BSM
+  for (int i = 1; i < (nSamples-n_atau); i++) nobackgend->AddEntry(h_deltaphi_tau_mu_tau_hadron[i], (tags[i]).c_str(), "l");
+#else
   for (int i = 1; i < nSamples; i++) nobackgend->AddEntry(h_deltaphi_tau_mu_tau_hadron[i], (tags[i]).c_str(), "l");
+#endif
   
   TCanvas *tempCanvas;
   
@@ -3209,8 +3559,14 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     if (nSamples > 1) histograms.at(h)[1]->Scale(nPostSignal/histograms.at(h)[1]->Integral());
 #endif
     THStack *tempStack = new THStack(("stacked - "+histogramsName).c_str(),histogramsName.c_str());
-    tempStack->Add(histograms.at(h)[nSamples+3]);
-    if (nSamples > 1) tempStack->Add(histograms.at(h)[1]);
+    
+    if (plotNames.at(h) == "tau_muon_pt") tempStack->Add(background_muon_pt);
+    else tempStack->Add(histograms.at(h)[nSamples+3]);
+#ifdef BSM
+    for (int sample = nSamples-1-n_atau; sample>0; sample--) tempStack->Add(histograms.at(h)[sample]);
+#else
+    for (int sample = nSamples-1; sample>0; sample--) tempStack->Add(histograms.at(h)[sample]);
+#endif
     if (tempStack->GetMaximum() > histograms.at(h)[0]->GetMaximum()) histograms.at(h)[0]->SetMaximum(1.2*tempStack->GetMaximum());
     stacks.push_back(tempStack);
     
@@ -3296,7 +3652,11 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
     loopgend->SetFillStyle(0);
     loopgend->SetFillColor(0); loopgend->SetLineColor(0); loopgend->SetShadowColor(0); loopgend->SetTextSize(0.035);
     loopgend->AddEntry(histograms.at(h)[0],    "Data", "ep");
+#ifdef BSM
+    for (int i = 1; i < (nSamples-n_atau); i++) loopgend->AddEntry(histograms.at(h)[i], (tags[i]).c_str(), "l");
+#else
     for (int i = 1; i < nSamples; i++) loopgend->AddEntry(histograms.at(h)[i], (tags[i]).c_str(), "l");
+#endif
     loopgend->AddEntry(background,    "ABCD background", "l");
     loopgend->Draw();
     
@@ -3568,8 +3928,27 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   c_background->SaveAs((basePlotDir+"/singlePlot/background.png").c_str());
   c_background->SaveAs((basePlotDir+"/singlePlot/background.pdf").c_str());
   
-  
   c_ABCD->SaveAs((basePlotDir+"/collective/ABCD."+plotFormat).c_str());
+  
+  
+  
+  TCanvas *c_ABCD_tau_mu_pt = new TCanvas("c_ABCD_tau_mu_pt", "c_ABCD_tau_mu_pt", 1600, 2400); c_ABCD_tau_mu_pt->Divide(2,3);
+  
+  c_ABCD_tau_mu_pt->cd(1); h_tau_mu_pt[nSamples]->Draw("e0e1x0");
+  
+  c_ABCD_tau_mu_pt->cd(2); h_tau_mu_pt[nSamples+1]->Draw("e0e1x0");
+  
+  c_ABCD_tau_mu_pt->cd(3); h_tau_mu_pt[nSamples+2]->Draw("e0e1x0");
+  
+  c_ABCD_tau_mu_pt->cd(4); h_tau_mu_pt[0]->Draw("e0e1x0");
+  
+  c_ABCD_tau_mu_pt->cd(5); h_tau_mu_pt[nSamples+3]->Draw("e0e1x0");
+  
+  c_ABCD_tau_mu_pt->SaveAs((basePlotDir+"/collective/ABCD_tau_mu_pt.png").c_str());
+  c_ABCD_tau_mu_pt->SaveAs((basePlotDir+"/collective/ABCD_tau_mu_pt.pdf").c_str());
+  
+  
+  
   
   TCanvas *c_PV = new TCanvas("c_PV", "c_PV", 1000, 500); c_PV->Divide(2,1);
   c_PV->cd(1); h_deltaphi_tau_mu_tau_hadron_nch->Draw("COLZ");
@@ -4108,6 +4487,9 @@ if( (TREE->BsTauTau_mu1_pt->at(i) < 3.5 && TMath::Abs(TREE->BsTauTau_mu1_eta->at
   //tempGend->Draw();
   //h_tau_mu_pt[nSamples+3]->Draw("hesame");
   stacks.at(h_tau_mu_pt[nSamples+1]->GetBinContent(1))->Draw("noclearhesame");
+#ifdef BSM  
+  for (int i = nSamples-n_atau; i < nSamples; i++) h_tau_mu_pt[i]->Draw("hesame");
+#endif
   CMS_lumi( c_tau_muon_pt, iPeriod, iPos );
   c_tau_muon_pt->SaveAs((basePlotDir+"/singlePlot/tau_muon_pt.png").c_str());
   c_tau_muon_pt->SaveAs((basePlotDir+"/singlePlot/tau_muon_pt.pdf").c_str());
@@ -4483,6 +4865,17 @@ TCanvas *c_tau_had = new TCanvas("c_tau_had", "c_tau_had", 2000, 3000); c_tau_ha
   
   c_tau_had->cd(9); h_tau_hadron_ncand_final[0]->Draw("e1same"); for (int i = 1; i < nSamples; i++) h_tau_hadron_ncand_final[i]->Draw("hesame"); legend->Draw(); 
   c_tau_had->cd(10); h_tau_hadron_vprob[0]->Draw("e0e1x0"); for (int i = 1; i < nSamples; i++) h_tau_hadron_vprob[i]->Draw("hesame"); legend->Draw(); 
+  
+  
+  TCanvas *c_tau_hadron_vprob = new TCanvas("c_tau_hadron_vprob", "c_tau_hadron_vprob", 800, 800);
+  h_tau_hadron_vprob[0]->Draw("e0e1x0"); legend->Draw();
+  //for (int i = 1; i < nSamples; i++) h_tau_hadron_vprob[i]->Draw("hesame");
+  stacks.at(h_tau_hadron_vprob[nSamples+1]->GetBinContent(1))->Draw("noclearhesame");
+  CMS_lumi( c_tau_hadron_vprob, iPeriod, iPos );
+  c_tau_hadron_vprob->SaveAs((basePlotDir+"/singlePlot/tau_hadron_vprob.png").c_str());
+  c_tau_hadron_vprob->SaveAs((basePlotDir+"/singlePlot/tau_hadron_vprob.pdf").c_str());
+  
+  
   c_tau_had->cd(11); for (int i = 1; i < nSamples; i++) h_tau_hadron_matched_pt_index[i]->Draw("hesame"); legend->Draw(); 
   c_tau_had->cd(12); for (int i = 1; i < nSamples; i++){
     hs_tau_hadron_mass->Add(h_tau_hadron_mass[i]);
@@ -4964,31 +5357,52 @@ TCanvas *c_tau_had = new TCanvas("c_tau_had", "c_tau_had", 2000, 3000); c_tau_ha
   c_cutflow->cd(2)->SetLogy(1);
   c_cutflow->SaveAs((basePlotDir+"/collective/cutflow."+plotFormat).c_str());
 
-  TFile *outputFile = new TFile("hists.root","RECREATE");
+  TFile *outputFile = new TFile("combine_mu3prong.root","RECREATE");
   outputFile->cd();
-  outputFile->mkdir("3prong");
-  outputFile->cd("3prong");
+  outputFile->mkdir("muon_pt");
+  outputFile->cd("muon_pt");
   
   TCanvas *c_output = new TCanvas("c_output", "c_output", 800*3, 800); c_output->Divide(nSamples,1);
-  //TH1F *h_deltaphi_tau_mu_tau_hadron_new_data = (TH1F*)pre_data->Clone("data_obs");
-  TH1F *h_deltaphi_tau_mu_tau_hadron_new_data = (TH1F*)h_deltaphi_tau_mu_tau_hadron[0]->Clone("data_obs");
-  c_output->cd(1); h_deltaphi_tau_mu_tau_hadron_new_data->DrawCopy("e0e1x0");
-  h_deltaphi_tau_mu_tau_hadron_new_data->SetDirectory(gDirectory);h_deltaphi_tau_mu_tau_hadron_new_data->Write();
+  TH1F *h_tau_mu_pt_new_data = (TH1F*)h_tau_mu_pt[0]->Clone("data_obs");
+  c_output->cd(1); h_tau_mu_pt_new_data->DrawCopy("e0e1x0");
+  h_tau_mu_pt_new_data->SetDirectory(gDirectory); h_tau_mu_pt_new_data->Write();
   
   //TH1F *h_deltaphi_tau_mu_tau_hadron_new_MC = (TH1F*)pre_signal->Clone("MC-signal");
   TH1F *h_deltaphi_tau_mu_tau_hadron_new_MC = (TH1F*)h_deltaphi_tau_mu_tau_hadron[1]->Clone("MC-signal");
   c_output->cd(2); h_deltaphi_tau_mu_tau_hadron_new_MC->DrawCopy("e0e1x0");
   h_deltaphi_tau_mu_tau_hadron_new_MC->SetDirectory(gDirectory);h_deltaphi_tau_mu_tau_hadron_new_MC->Write();
   
+  
+  
+#ifdef BSM  
+  TH1F *h_signal_atau_muon_pt[n_atau];
+  for (int i=0; i<n_atau; i++){
+    string atau_muon_pt_name = "gamgamToTauTau";
+    atau_muon_pt_name += tag[i+nSamples-n_atau];
+    h_signal_atau_muon_pt[i] = (TH1F*)h_tau_mu_pt[i+nSamples-n_atau]->Clone(atau_muon_pt_name.c_str());
+    h_signal_atau_muon_pt[i]->SetDirectory(gDirectory); h_signal_atau_muon_pt[i]->Write();
+    h_signal_atau_sys_muon_pt_SF_Down[i]->SetDirectory(gDirectory); h_signal_atau_sys_muon_pt_SF_Down[i]->Write();
+    h_signal_atau_sys_muon_pt_SF_Up[i]->SetDirectory(gDirectory); h_signal_atau_sys_muon_pt_SF_Up[i]->Write();
+  }
+#endif
+  
+  
+  
+  
+  
+  
   //c_output->cd(3); pre_background->DrawCopy("e0e1x0");
   //pre_background->SetDirectory(gDirectory);pre_background->Write();
-  c_output->cd(3); background->DrawCopy("e0e1x0");
-  background->SetDirectory(gDirectory); background->Write();
+  //c_output->cd(3); background->DrawCopy("e0e1x0");
+  //background->SetDirectory(gDirectory); background->Write();
+  c_output->cd(3); background_muon_pt->DrawCopy("e0e1x0");
+  background_muon_pt->SetDirectory(gDirectory); background_muon_pt->Write();
   
   background_sysNchDown->SetDirectory(gDirectory); background_sysNchDown->Write();
   background_sysNchUp->SetDirectory(gDirectory); background_sysNchUp->Write();
   for (int var = 0; var < 2+nNchCategories; var++){
-    B_lowNch_highHF[nSamples+var]->SetDirectory(gDirectory); B_lowNch_highHF[nSamples+var]->Write();
+    //B_lowNch_highHF[nSamples+var]->SetDirectory(gDirectory); B_lowNch_highHF[nSamples+var]->Write();
+    B_tau_mu_pt[nSamples+var]->SetDirectory(gDirectory); B_tau_mu_pt[nSamples+var]->Write();
   }
   
   if (nSamples>1){
@@ -5002,7 +5416,7 @@ TCanvas *c_tau_had = new TCanvas("c_tau_had", "c_tau_had", 2000, 3000); c_tau_ha
   h_sys_muon_SF_Up->SetDirectory(gDirectory); h_sys_muon_SF_Up->Write();
   
   
-  for (int ebin = 0; ebin < 3; ebin++){
+  /*for (int ebin = 0; ebin < 3; ebin++){
     for (int pbin = 0; pbin < 14; pbin++){
       h_tauSFdown[ebin][pbin]->SetDirectory(gDirectory); h_tauSFdown[ebin][pbin]->Write();
       h_tauSFup[ebin][pbin]->SetDirectory(gDirectory); h_tauSFup[ebin][pbin]->Write();
@@ -5010,7 +5424,7 @@ TCanvas *c_tau_had = new TCanvas("c_tau_had", "c_tau_had", 2000, 3000); c_tau_ha
   }
   h_tauSFmean->SetDirectory(gDirectory); h_tauSFmean->Write();
   
-  /*for (int i = 1; i < nSamples; i++){
+  for (int i = 1; i < nSamples; i++){
     c_output->cd(i+1); h_deltaphi_tau_mu_tau_hadron[i]->DrawCopy("e1");
     h_deltaphi_tau_mu_tau_hadron[i]->SetDirectory(gDirectory);h_deltaphi_tau_mu_tau_hadron[i]->Write();
   }*/
